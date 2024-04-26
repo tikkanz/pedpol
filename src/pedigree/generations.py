@@ -5,15 +5,32 @@ def is_integer(df, column):
     return isinstance(df.schema[column], (pl.Int64, pl.Int32, pl.Int16))
 
 
-# ped.pipe(is_integer, "sire")
-
-
-def get_null_parent_value(df, parent_column):
+def get_unknown_parent_value(df, parent_column):
+    """Determines if"""
     map_null = {True: 0, False: "."}
     return map_null[is_integer(df, parent_column)]
 
 
-# get_null_parent_value(ped, "Father")
+# get_unknown_parent_value(ped, "Father")
+
+
+def null_unknown_parents(
+    df: pl.LazyFrame | pl.DataFrame,
+    parent_labels: tuple[str, str] = ("sire", "dam"),
+    unknown_parent_value=None,
+) -> pl.LazyFrame | pl.DataFrame:
+    """Replaces the parent ID used to represent 'unknown' with null"""
+    if unknown_parent_value is None:
+        unknown_parent_value = get_unknown_parent_value(df, parent_labels[0])
+    return df.with_columns(
+        [
+            pl.when(pl.col(label) == unknown_parent_value)
+            .then(pl.lit(None))
+            .otherwise(pl.col(label))
+            .alias(label)
+            for label in parent_labels
+        ]
+    )
 
 
 def parents(parent_labels: tuple[str, str] = ("sire", "dam"), null_value=0) -> pl.Expr:
@@ -34,7 +51,7 @@ def get_parents(
     null_value=None,
 ) -> pl.LazyFrame | pl.DataFrame:
     if null_value is None:
-        null_value = get_null_parent_value(df, parent_labels[0])
+        null_value = get_unknown_parent_value(df, parent_labels[0])
     return df.select(parents(parent_labels=parent_labels, null_value=null_value))
 
 
