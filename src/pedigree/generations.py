@@ -2,11 +2,14 @@ import polars as pl
 
 
 def is_integer(df, column):
+    """Determines if the specified column in the DataFrame has an integer type"""
     return isinstance(df.schema[column], (pl.Int64, pl.Int32, pl.Int16))
 
 
 def get_unknown_parent_value(df, parent_column):
-    """Determines if"""
+    """Determines the value used to represent unknown sires/dams
+
+    Assumes `0` if parent Ids are integers, or `'.'` if the parent Ids are literals."""
     map_null = {True: 0, False: "."}
     return map_null[is_integer(df, parent_column)]
 
@@ -19,7 +22,7 @@ def null_unknown_parents(
     parent_labels: tuple[str, str] = ("sire", "dam"),
     unknown_parent_value=None,
 ) -> pl.LazyFrame | pl.DataFrame:
-    """Replaces the parent ID used to represent 'unknown' with null"""
+    """Replaces the parent Id used to represent 'unknown' with null"""
     if unknown_parent_value is None:
         unknown_parent_value = get_unknown_parent_value(df, parent_labels[0])
     return df.with_columns(
@@ -33,26 +36,16 @@ def null_unknown_parents(
     )
 
 
-def parents(parent_labels: tuple[str, str] = ("sire", "dam"), null_value=0) -> pl.Expr:
+def parents(parent_labels: tuple[str, str] = ("sire", "dam")) -> pl.Expr:
     """Returns an expression describing the parents in a pedigree"""
     sire, dam = parent_labels[0], parent_labels[-1]
-    return (
-        pl.col(sire)
-        .filter(pl.col(sire) != null_value)
-        .append(pl.col(dam).filter(pl.col(dam) != null_value))
-        .unique()
-        .alias("parents")
-    )
+    return pl.col(sire).append(pl.col(dam)).drop_nulls().unique().alias("parents")
 
 
 def get_parents(
-    df: pl.LazyFrame | pl.DataFrame,
-    parent_labels: tuple[str, str] = ("sire", "dam"),
-    null_value=None,
+    df: pl.LazyFrame | pl.DataFrame, parent_labels: tuple[str, str] = ("sire", "dam")
 ) -> pl.LazyFrame | pl.DataFrame:
-    if null_value is None:
-        null_value = get_unknown_parent_value(df, parent_labels[0])
-    return df.select(parents(parent_labels=parent_labels, null_value=null_value))
+    return df.select(parents(parent_labels=parent_labels))
 
 
 def classify_generations(
