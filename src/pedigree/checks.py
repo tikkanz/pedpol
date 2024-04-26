@@ -5,12 +5,14 @@ from pedigree.core import ParentLabels, PedigreeLabels, parents
 
 def get_parents_both_sires_and_dams(
     pedigree: pl.LazyFrame | pl.DataFrame,
-    pedigree_labels: tuple[str, str] = ParentLabels,
+    parent_labels: tuple[str, str] = ParentLabels,
 ) -> pl.LazyFrame | pl.DataFrame:
     """Returns any animals that are both sires and dams"""
-    sire, dam = pedigree_labels
-    return pedigree.select(parents((sire,))).join(
-        pedigree.select(dam), left_on="parents", right_on=dam, how="inner"
+    sire, dam = parent_labels
+    return (
+        pedigree.select(parents((sire,)))
+        .join(pedigree.select(dam), left_on="parents", right_on=dam, how="inner")
+        .unique()
     )
 
 
@@ -23,7 +25,7 @@ def get_animals_with_multiple_records(
     pedigree_labels: tuple[str, str, str] = PedigreeLabels,
 ) -> pl.LazyFrame | pl.DataFrame:
     """Returns any animals that have multiple pedigree records"""
-    animal, sire, dam = pedigree_labels
+    animal = pedigree_labels[0]
     return pedigree.filter(pedigree.select(animal).is_duplicated())
 
 
@@ -47,3 +49,24 @@ def get_animals_are_own_parent(
     return pedigree.filter(
         pl.any_horizontal([pl.col(animal).is_in(pl.concat_list([sire, dam]))])
     )
+
+
+def add_missing_records(
+    pedigree: pl.LazyFrame | pl.DataFrame,
+    pedigree_labels: tuple[str, str, str] = PedigreeLabels,
+) -> pl.LazyFrame | pl.DataFrame:
+    """Returns pedigree with new records added for parents without their own"""
+    animal = pedigree_labels[0]
+
+    new_records = get_parents_without_own_record(
+        pedigree, pedigree_labels=pedigree_labels
+    ).select(
+        pl.col("parents").alias(animal),
+        *[
+            pl.lit(None).cast(dtype).alias(col)
+            for col, dtype in pedigree.schema.items()
+            if col != animal
+        ],
+    )
+
+    return pl.concat([new_records, pedigree])
