@@ -1,7 +1,8 @@
 from pathlib import Path
 
 import polars as pl
-from pedigree.generations import classify_generations, null_unknown_parents
+from pedigree.core import null_unknown_parents
+from pedigree.generations import classify_generations
 
 data_dir = Path("/home/rishe0/dev/pedigree/tests/resources")
 
