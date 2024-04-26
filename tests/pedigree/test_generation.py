@@ -2,33 +2,48 @@ from pathlib import Path
 
 import polars as pl
 from pedigree.core import null_unknown_parents
-from pedigree.generations import classify_generations, get_descendents_of
+from pedigree.generations import (
+    classify_generations,
+    get_ancestors_of,
+    get_descendants_of,
+)
 
 data_dir = Path("/home/rishe0/dev/pedigree/tests/resources")
 
-pedjv = pl.read_csv(
+ped_jv = pl.read_csv(
     data_dir / "ped_jv.csv", dtypes=3 * [pl.Int32], comment_prefix="#"
 ).pipe(
     null_unknown_parents,
 )
 
-pedlit = pl.read_csv(
+ped_lit = pl.read_csv(
     data_dir / "ped_literal.csv", dtypes=3 * [pl.Utf8], comment_prefix="#"
 ).pipe(null_unknown_parents, parent_labels=("Father", "Mother"))
 
-pedjv = pedjv.pipe(classify_generations, pedigree_labels=("progeny", "sire", "dam"))
-pedlit = pedlit.pipe(
-    classify_generations, pedigree_labels=("Child", "Father", "Mother")
-)
-
 ids = [3, 4]
-get_descendents_of(
-    pedjv,
+descendants = get_descendants_of(
+    ped_jv,
     ids,
     generations=6,
-    include_ids=True,
+    include_ids=False,
     pedigree_labels=("progeny", "sire", "dam"),
 )
+print("Descendants of 3 & 4 (not including ids)", "\n", descendants)
 
-print(pedjv)
-print(pedlit)
+ids = ["Kristi"]
+ancestors = get_ancestors_of(
+    ped_lit,
+    ids,
+    generations=2,
+    include_ids=True,
+    pedigree_labels=("Child", "Father", "Mother"),
+)
+print("Ancestors of Kristi (including ids)", "\n", ancestors)
+
+ped_jv = ped_jv.pipe(classify_generations, pedigree_labels=("progeny", "sire", "dam"))
+print("Classified ped_jv", "\n", ped_jv)
+
+ped_lit = ped_lit.pipe(
+    classify_generations, pedigree_labels=("Child", "Father", "Mother")
+)
+print("Classified ped_lit", "\n", ped_lit)
