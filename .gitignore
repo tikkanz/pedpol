@@ -9,5 +9,6 @@ wheels/
 # scratch/temp files
 scratch_*
 
-# venv
+# tool generated
+.ruff_cache/
 .venv
