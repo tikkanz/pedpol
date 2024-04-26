@@ -9,26 +9,26 @@ def is_integer(df, column):
     return isinstance(df.schema[column], (pl.Int64, pl.Int32, pl.Int16))
 
 
-def get_unknown_parent_value(df, parent_label):
+def get_unknown_parent_value(pedigree, parent_label):
     """Determines the value used to represent unknown sires/dams
 
     Assumes `0` if parent Ids are integers, or `'.'` if the parent Ids are literals."""
     map_null = {True: 0, False: "."}
-    return map_null[is_integer(df, parent_label)]
+    return map_null[is_integer(pedigree, parent_label)]
 
 
 # get_unknown_parent_value(ped, "Father")
 
 
 def null_unknown_parents(
-    df: pl.LazyFrame | pl.DataFrame,
+    pedigree: pl.LazyFrame | pl.DataFrame,
     parent_labels: tuple[str, str] = ParentLabels,
     unknown_parent_value=None,
 ) -> pl.LazyFrame | pl.DataFrame:
     """Replaces the parent Id used to represent 'unknown' with null"""
     if unknown_parent_value is None:
-        unknown_parent_value = get_unknown_parent_value(df, parent_labels[0])
-    return df.with_columns(
+        unknown_parent_value = get_unknown_parent_value(pedigree, parent_labels[0])
+    return pedigree.with_columns(
         [
             pl.when(pl.col(label) == unknown_parent_value)
             .then(pl.lit(None))
@@ -59,6 +59,7 @@ def parents(parent_labels: tuple[str, str] = ParentLabels) -> pl.Expr:
 
 
 def get_parents(
-    df: pl.LazyFrame | pl.DataFrame, parent_labels: tuple[str, str] = ParentLabels
+    pedigree: pl.LazyFrame | pl.DataFrame, parent_labels: tuple[str, str] = ParentLabels
 ) -> pl.LazyFrame | pl.DataFrame:
-    return df.select(parents(parent_labels=parent_labels))
+    """Returns a Dataframe containing the parents in a pedigree"""
+    return pedigree.select(parents(parent_labels=parent_labels))
