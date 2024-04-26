@@ -70,3 +70,32 @@ def add_missing_records(
     )
 
     return pl.concat([new_records, pedigree])
+
+
+def recode_pedigree(
+    pedigree: pl.LazyFrame | pl.DataFrame,
+    pedigree_labels: tuple[str, str, str] = PedigreeLabels,
+) -> pl.LazyFrame | pl.DataFrame:
+    """Recodes a pedigree to use integer ids from 1 to the number of animals in the pedigree"""
+    # If not all parents have their own record then raise ValueError
+    animal, sire, dam = pedigree_labels
+    no_own_record = get_parents_without_own_record(pedigree, pedigree_labels)
+    if (err_count := no_own_record.height) != 0:
+        raise ValueError(
+            f"{err_count} parents did not have their own record in the pedigree: \n {no_own_record}"
+        )
+
+    id_map = pedigree.select(animal).with_row_index(name="recoded", offset=1)
+    # keep map of old to new id (return it too?)
+
+    new_pedigree = (
+        pedigree.join(id_map, on=animal, how="left")
+        .join(id_map, left_on=sire, right_on=animal, how="left", suffix="_sire")
+        .join(id_map, left_on=dam, right_on=animal, how="left", suffix="_dam")
+    )
+    return new_pedigree.select(
+        pl.col("recoded").alias(animal),
+        pl.col("recoded_sire").alias(sire),
+        pl.col("recoded_dam").alias(dam),
+        pl.all().exclude(animal, sire, dam, "recoded", "recoded_sire", "recoded_dam"),
+    ), id_map

@@ -7,6 +7,7 @@ from pedigree.checks import (
     get_animals_with_multiple_records,
     get_parents_both_sires_and_dams,
     get_parents_without_own_record,
+    recode_pedigree,
 )
 from pedigree.core import null_unknown_parents
 
@@ -51,4 +52,10 @@ print(
     "Added record for any parents without their own record",
     "\n",
     ped_err.pipe(add_missing_records, ("anim", "sire", "dam")),
+)
+
+tmp = ped_lit.pipe(add_missing_records, ("Child", "Father", "Mother"))
+recoded_ped, id_map = recode_pedigree(tmp, ("Child", "Father", "Mother"))
+print(
+    "Pedigree with recoded Ids", "\n", recoded_ped, "\n", "Map to old Ids", "\n", id_map
 )
