@@ -8,6 +8,7 @@ from pedigree.generations import (
     get_descendants_of,
 )
 
+pl.Config.set_tbl_rows(15)
 data_dir = Path("/home/rishe0/dev/pedigree/tests/resources")
 
 ped_jv = pl.read_csv(

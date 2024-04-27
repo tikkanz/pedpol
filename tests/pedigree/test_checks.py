@@ -11,6 +11,7 @@ from pedigree.checks import (
 )
 from pedigree.core import null_unknown_parents
 
+pl.Config.set_tbl_rows(15)
 data_dir = Path("/home/rishe0/dev/pedigree/tests/resources")
 
 ped_jv = pl.read_csv(
