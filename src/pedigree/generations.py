@@ -29,7 +29,7 @@ def get_relatives_of(
     pedigree: pl.DataFrame | pl.LazyFrame,
     ids: pl.Expr | Collection[any] | pl.Series,
     relatives_function: callable,
-    generations: int | None = None,
+    generations: int = 100,
     include_ids: bool = True,
     pedigree_labels: tuple[str, str, str] = PedigreeLabels,
 ):
@@ -52,7 +52,7 @@ def get_relatives_of(
 def get_descendants_of(
     pedigree: pl.DataFrame | pl.LazyFrame,
     ids: pl.Expr | Collection[any] | pl.Series,
-    generations: int | None = None,
+    generations: int = 100,
     include_ids: bool = True,
     pedigree_labels: tuple[str, str, str] = PedigreeLabels,
 ) -> pl.DataFrame | pl.LazyFrame:
@@ -70,7 +70,7 @@ def get_descendants_of(
 def get_ancestors_of(
     pedigree: pl.DataFrame | pl.LazyFrame,
     ids: pl.Expr | Collection[any] | pl.Series,
-    generations: int | None = None,
+    generations: int = 100,
     include_ids: bool = True,
     pedigree_labels: tuple[str, str, str] = PedigreeLabels,
 ) -> pl.DataFrame | pl.LazyFrame:
