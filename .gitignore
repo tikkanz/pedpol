@@ -10,5 +10,6 @@ wheels/
 scratch_*
 
 # tool generated
+.pytest_cache/
 .ruff_cache/
 .venv
