@@ -89,7 +89,12 @@ def classify_generations(
     pedigree: pl.DataFrame | pl.LazyFrame,
     pedigree_labels: tuple[str, str, str] = PedigreeLabels,
 ) -> pl.DataFrame:
-    """Add column classifying the animals into generations within the pedigree"""
+    """Add column classifying the animals into generations within the pedigree
+
+    Journal of Animal and Veterinary Advances
+    Year: 2009 | Volume: 8 | Issue: 1 | Page No.: 177-182
+    An Algorithm to Sort Complex Pedigrees Chronologically without Birthdates
+    Zhiwu Zhang , Changxi Li , Rory J. Todhunter , George Lust , Laksiri Goonewardene and Zhiquan Wang"""
     animal, sire, dam = pedigree_labels
     g = 0
     parents_df = pedigree = (
