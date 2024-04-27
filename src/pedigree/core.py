@@ -18,8 +18,9 @@ def get_unknown_parent_value(
     """Determines the value used to represent unknown sires/dams
 
     Assumes `0` if parent Ids are integers, or `'.'` if the parent Ids are literals.
+    ### Example use:
     ```python
-    get_unknown_parent_value(ped_df, "Father")
+    get_unknown_parent_value(ped_df, "Father") # -> '.'
     ```
     """
     map_null = {True: 0, False: "."}
@@ -33,10 +34,10 @@ def null_unknown_parents(
 ) -> pl.LazyFrame | pl.DataFrame:
     """Replaces the parent Id used to represent an 'unknown' parent with null
 
+    ### Example use:
     ```python
     null_unknown_parents(ped_df, ("Father", "Mother"))
-    ```
-    """
+    ```"""
     if unknown_parent_value is None:
         unknown_parent_value = get_unknown_parent_value(pedigree, parent_labels[0])
     return pedigree.with_columns(
@@ -53,8 +54,9 @@ def null_unknown_parents(
 def pedigree_ids(pedigree_labels: tuple[str, str, str] = PedigreeLabels) -> pl.Expr:
     """Returns an expression describing all the Ids in a pedigree
 
+    ### Example use:
     ```python
-    ped_df.select(pedigree_ids("indiv","sire","dam"))
+    allIds_df = ped_df.select(pedigree_ids(("indiv","sire","dam")))
     ```"""
     animal, sire, dam = pedigree_labels
     return (
@@ -70,8 +72,10 @@ def pedigree_ids(pedigree_labels: tuple[str, str, str] = PedigreeLabels) -> pl.E
 def parents(parent_labels: tuple[str, str] = ParentLabels) -> pl.Expr:
     """Returns an expression describing the parents in a pedigree
 
+    ### Example use:
     ```python
-    ped_df.select(parents("Father","Mother"))
+    parents_df = ped_df.select(parents(("Father","Mother")))
+    sires_df = ped_df.select(parents(("Father",)))
     ```"""
     sire, dam = parent_labels[0], parent_labels[-1]
     return pl.col(sire).append(pl.col(dam)).drop_nulls().unique().alias("parents")
@@ -82,7 +86,8 @@ def get_parents(
 ) -> pl.LazyFrame | pl.DataFrame:
     """Returns a Dataframe containing the parents in a pedigree
 
+    ### Example use:
     ```python
-    ped_df.pipe(get_parents, ("Father","Mother"))
+    parents_df = ped_df.pipe(get_parents, ("Father","Mother"))
     ```"""
     return pedigree.select(parents(parent_labels=parent_labels))
