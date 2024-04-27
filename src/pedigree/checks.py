@@ -72,6 +72,26 @@ def add_missing_records(
     return pl.concat([new_records, pedigree])
 
 
+def null_parents_without_own_record(
+    pedigree: pl.LazyFrame | pl.DataFrame,
+    pedigree_labels: tuple[str, str, str] = PedigreeLabels,
+) -> pl.LazyFrame | pl.DataFrame:
+    """Returns pedigree where parents without their own record are marked as `null`"""
+    parent_cols = pedigree_labels[1:]
+    null_parents = get_parents_without_own_record(
+        pedigree, pedigree_labels=pedigree_labels
+    )
+    return pedigree.with_columns(
+        *[
+            pl.when(pl.col(col).is_in(null_parents))
+            .then(pl.lit(None))
+            .otherwise(pl.col(col))
+            .alias(col)
+            for col in parent_cols
+        ]
+    )
+
+
 def recode_pedigree(
     pedigree: pl.LazyFrame | pl.DataFrame,
     pedigree_labels: tuple[str, str, str] = PedigreeLabels,
