@@ -25,7 +25,7 @@ def get_parents_of(
     return pedigree.filter(pl.col(animal).is_in(anims.select(parents((sire, dam)))))
 
 
-def get_relatives_of(
+def _get_relatives_of(
     pedigree: pl.DataFrame | pl.LazyFrame,
     ids: pl.Expr | Collection[any] | pl.Series,
     relatives_function: callable,
@@ -57,7 +57,7 @@ def get_descendants_of(
     pedigree_labels: tuple[str, str, str] = PedigreeLabels,
 ) -> pl.DataFrame | pl.LazyFrame:
     """Return the descendants of the animals specified"""
-    return get_relatives_of(
+    return _get_relatives_of(
         pedigree,
         ids,
         get_progeny_of,
@@ -75,7 +75,7 @@ def get_ancestors_of(
     pedigree_labels: tuple[str, str, str] = PedigreeLabels,
 ) -> pl.DataFrame | pl.LazyFrame:
     """Return the descendants of the animals specified"""
-    return get_relatives_of(
+    return _get_relatives_of(
         pedigree,
         ids,
         get_parents_of,
