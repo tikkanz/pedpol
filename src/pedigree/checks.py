@@ -95,8 +95,10 @@ def null_parents_without_own_record(
 def recode_pedigree(
     pedigree: pl.LazyFrame | pl.DataFrame,
     pedigree_labels: tuple[str, str, str] = PedigreeLabels,
-) -> pl.LazyFrame | pl.DataFrame:
-    """Recodes a pedigree to use integer ids from 1 to the number of animals in the pedigree"""
+) -> tuple[pl.LazyFrame | pl.DataFrame]:
+    """Recodes a pedigree to use integer ids from 1 to the number of animals in the pedigree
+
+    Returns recoded pedigree & map of old id to recoded id."""
     # If not all parents have their own record then raise ValueError
     animal, sire, dam = pedigree_labels
     no_own_record = get_parents_without_own_record(pedigree, pedigree_labels)
@@ -106,7 +108,6 @@ def recode_pedigree(
         )
 
     id_map = pedigree.select(animal).with_row_index(name="recoded", offset=1)
-    # keep map of old to new id (return it too?)
 
     new_pedigree = (
         pedigree.join(id_map, on=animal, how="left")
