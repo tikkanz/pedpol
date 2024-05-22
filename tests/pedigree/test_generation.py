@@ -33,13 +33,13 @@ print("Descendants of 3 & 4 (not including ids)", "\n", descendants)
 
 ids = ["Kristi"]
 ancestors = get_ancestors_of(
-    ped_lit,
+    ped_lit.lazy(),
     ids,
     generations=2,
     include_ids=True,
     pedigree_labels=("Child", "Father", "Mother"),
 )
-print("Ancestors of Kristi (including ids)", "\n", ancestors)
+print("Ancestors of Kristi (including ids)", "\n", ancestors.collect())
 
 ped_jv = ped_jv.pipe(classify_generations, pedigree_labels=("progeny", "sire", "dam"))
 print("Classified ped_jv", "\n", ped_jv)

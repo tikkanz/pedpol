@@ -10,7 +10,7 @@ def get_progeny_of(
     ids: pl.Expr | Collection[any] | pl.Series,
     pedigree_labels: tuple[str, str, str] = PedigreeLabels,
 ) -> pl.DataFrame | pl.LazyFrame:
-    """Return the progeny of the animals specified"""
+    """Return records for the progeny of the animals specified"""
     return pedigree.filter(pl.any_horizontal(pl.col(pedigree_labels[1:]).is_in(ids)))
 
 
@@ -19,10 +19,11 @@ def get_parents_of(
     ids: pl.Expr | Collection[any] | pl.Series,
     pedigree_labels: tuple[str, str, str] = PedigreeLabels,
 ) -> pl.DataFrame | pl.LazyFrame:
-    """Return the parents of the animals specified"""
+    """Return records for the parents of the animals specified"""
     animal, sire, dam = pedigree_labels
-    anims = pedigree.filter(pl.col(animal).is_in(ids))
-    return pedigree.filter(pl.col(animal).is_in(anims.select(parents((sire, dam)))))
+    anims = pedigree.lazy().filter(pl.col(animal).is_in(ids))
+    prnts = anims.select(parents((sire, dam))).collect()
+    return pedigree.filter(pl.col(animal).is_in(prnts))
 
 
 def _get_relatives_of(
@@ -40,7 +41,11 @@ def _get_relatives_of(
     g = 0
     ids_g = ids
     while generations > g and ids_g.height != 0:
-        ids_g = relatives_function(pedigree, ids_g, pedigree_labels).select(animal)
+        ids_g = (
+            relatives_function(pedigree.lazy(), ids_g, pedigree_labels)
+            .select(animal)
+            .collect()
+        )
         ids_relatives = pl.concat([ids_relatives, ids_g])
         g += 1
 
