@@ -6,9 +6,10 @@
 #   features: []
 #   all-features: false
 #   with-sources: false
+#   generate-hashes: false
 
 -e file:.
 numpy==1.26.4
     # via pedigree
-polars==0.20.22
+polars==0.20.27
     # via pedigree
