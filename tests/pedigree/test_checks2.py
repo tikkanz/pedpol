@@ -32,8 +32,14 @@ def test_record_of_animal_that_is_their_own_parent(anims_are_own_parent):
 def test_number_of_multiple_records_found(ped_errors):
     assert (
         get_animals_with_multiple_records(ped_errors, ("anim", "sire", "dam")).height
-        / 2
-        == 1
+        == 2
+    )
+
+
+def test_no_multiple_records_found(ped_lit):
+    assert (
+        get_animals_with_multiple_records(ped_lit, ("Child", "Father", "Mother")).height
+        == 0
     )
 
 
