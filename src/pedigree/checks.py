@@ -51,6 +51,82 @@ def get_animals_are_own_parent(
     )
 
 
+def get_animals_born_before_parents(
+    pedigree: pl.LazyFrame | pl.DataFrame,
+    pedigree_labels: tuple[str, str, str] = PedigreeLabels,
+    age_column: str = "generation",
+) -> pl.LazyFrame | pl.DataFrame:
+    """Returns any animals that are used as a sire before they were born
+
+    `age_column` is column in `pedigree` to use for age comparisons. For example
+    'birth_year' or 'generation'"""
+    animal, sire, dam = pedigree_labels
+    pedigree = pedigree.lazy()
+    return pl.concat(
+        [
+            pedigree.join(
+                pedigree.select(animal, age_column),
+                left_on=sire,
+                right_on=animal,
+                suffix="_parent",
+            )
+            .filter(pl.col(age_column) <= pl.col(f"{age_column}_parent"))
+            .with_columns(pl.lit(f"born before {sire}").alias("error")),
+            pedigree.join(
+                pedigree.select(animal, age_column),
+                left_on=dam,
+                right_on=animal,
+                suffix="_parent",
+            )
+            .filter(pl.col(age_column) <= pl.col(f"{age_column}_parent"))
+            .with_columns(pl.lit(f"born before {dam}").alias("error")),
+        ]
+    ).collect()
+
+
+def get_animals_are_sires_before_birth(
+    pedigree: pl.LazyFrame | pl.DataFrame,
+    pedigree_labels: tuple[str, str, str] = PedigreeLabels,
+    age_column: str = "generation",
+) -> pl.LazyFrame | pl.DataFrame:
+    """Returns any animals that are used as a sire before they were born
+
+    `age_column` is column in `pedigree` to use for age comparisons. For example
+    'birth_year' or 'generation'"""
+    animal, sire, dam = pedigree_labels
+
+    return (
+        pedigree.lazy()
+        .join(
+            pedigree.lazy().group_by(sire).agg(pl.col(age_column).min()),
+            left_on=animal,
+            right_on=sire,
+            suffix="_as_parent",
+        )
+        .filter(pl.col(age_column) >= pl.col(f"{age_column}_as_parent"))
+        .collect()
+    )
+
+
+def get_animals_are_dams_before_birth(
+    pedigree: pl.LazyFrame | pl.DataFrame,
+    pedigree_labels: tuple[str, str, str] = PedigreeLabels,
+    age_column: str = "generation",
+) -> pl.LazyFrame | pl.DataFrame:
+    """Returns any animals that are used as a dam before they were born
+
+    `age_column` is column in `pedigree` to use for age comparisons. For example
+    'birth_year' or 'generation'"""
+    animal, sire, dam = pedigree_labels
+
+    return pedigree.join(
+        pedigree.group_by(dam).agg(pl.col(age_column).min()),
+        left_on=animal,
+        right_on=dam,
+        suffix="_as_parent",
+    ).filter(pl.col(age_column) >= pl.col(f"{age_column}_as_parent"))
+
+
 def add_missing_records(
     pedigree: pl.LazyFrame | pl.DataFrame,
     pedigree_labels: tuple[str, str, str] = PedigreeLabels,
