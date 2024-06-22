@@ -105,7 +105,9 @@ def classify_generations(
     parents_df = pedigree = (
         pedigree.with_columns(pl.lit(g).alias("generation")).lazy().collect()
     )
-    while parents_df.height > 0:
+    parent_count = parents_df.height + 1
+    while parents_df.height < parent_count:
+        parent_count = parents_df.height
         pedigree = pedigree.with_columns(
             pl.when(pl.col(animal).is_in(parents_df.select(parents((sire, dam)))))
             .then(pl.col("generation") + 1)
