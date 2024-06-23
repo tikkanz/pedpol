@@ -1,6 +1,7 @@
 import polars as pl
 import pytest
-from pedigree.checks import (
+from pedigree.core import parents
+from pedigree.validation import (
     add_missing_records,
     get_animals_are_own_parent,
     get_animals_with_multiple_records,
@@ -9,7 +10,6 @@ from pedigree.checks import (
     null_parents_without_own_record,
     recode_pedigree,
 )
-from pedigree.core import parents
 
 pl.Config.set_tbl_rows(15)
 
