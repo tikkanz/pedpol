@@ -76,7 +76,7 @@ def test_find_animals_born_before_their_parents(ped_circular_classified):
 
 
 def test_classify_and_find_animals_born_before_their_parents(ped_circular):
-    assert get_animals_born_before_parents(*ped_circular).height > 0
+    assert get_animals_born_before_parents(*ped_circular).collect().height > 0
 
 
 def test_number_of_multiple_records_found(ped_errors):

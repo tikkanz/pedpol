@@ -24,10 +24,10 @@ def get_parents_both_sires_and_dams(
 def get_animals_with_multiple_records(
     pedigree: pl.LazyFrame | pl.DataFrame,
     pedigree_labels: tuple[str, str, str] = PedigreeLabels,
-) -> pl.LazyFrame | pl.DataFrame:
+) -> pl.DataFrame:
     """Returns any animals that have multiple pedigree records"""
     animal = pedigree_labels[0]
-    return pedigree.filter(pedigree.select(animal).is_duplicated())
+    return pedigree.filter(pedigree.lazy().select(animal).collect().is_duplicated())
 
 
 def get_parents_without_own_record(
@@ -62,11 +62,12 @@ def get_animals_born_before_parents(
     `age_column` is column in `pedigree` to use for age comparisons. For example
     'birth_year' or 'generation'"""
     if age_column is None:
-        pedigree = classify_generations(pedigree, pedigree_labels=pedigree_labels)
+        pedigree = classify_generations(
+            pedigree, pedigree_labels=pedigree_labels
+        ).lazy()
         age_column = "generation"
 
     animal, sire, dam = pedigree_labels
-    pedigree = pedigree.lazy()
     return pl.concat(
         [
             pedigree.join(
@@ -76,7 +77,7 @@ def get_animals_born_before_parents(
                 suffix="_parent",
             )
             .filter(pl.col(age_column) <= pl.col(f"{age_column}_parent"))
-            .with_columns(pl.lit(f"born before {sire}").alias("error")),
+            .with_columns(pl.lit(f"was born before {sire}").alias("error")),
             pedigree.join(
                 pedigree.select(animal, age_column),
                 left_on=dam,
@@ -84,9 +85,9 @@ def get_animals_born_before_parents(
                 suffix="_parent",
             )
             .filter(pl.col(age_column) <= pl.col(f"{age_column}_parent"))
-            .with_columns(pl.lit(f"born before {dam}").alias("error")),
+            .with_columns(pl.lit(f"was born before {dam}").alias("error")),
         ]
-    ).collect()
+    )
 
 
 def get_animals_are_sires_before_birth(
@@ -132,14 +133,65 @@ def get_animals_are_dams_before_birth(
     ).filter(pl.col(age_column) >= pl.col(f"{age_column}_as_parent"))
 
 
-def add_missing_records(
+def validate_pedigree(
+    pedigree: pl.LazyFrame | pl.DataFrame,
+    pedigree_labels: tuple[str, str, str] = PedigreeLabels,
+    age_column: str | None = None,
+    sex_column: str | None = None,
+) -> bool:
+    """Validates a pedigree"""
+    # return false if pedigree doesn't have 3 columns (animal, sire, dam)
+    if pedigree.select(pedigree_labels).width != 3:
+        is_valid_pedigree = False
+        return is_valid_pedigree, "Columns missing from Pedigree DataFrame"
+
+    pedigree = pedigree.lazy()
+    errors_bbp = get_animals_born_before_parents(
+        pedigree, pedigree_labels=pedigree_labels, age_column=age_column
+    ).select(*pedigree_labels, "error")
+    errors_wor = get_missing_records(
+        pedigree, pedigree_labels=pedigree_labels
+    ).with_columns(pl.lit("has no own record").alias("error"))
+    errors_op = get_animals_are_own_parent(
+        pedigree, pedigree_labels=pedigree_labels
+    ).with_columns(pl.lit("is own parent").alias("error"))
+    errors_mr = get_animals_with_multiple_records(
+        pedigree, pedigree_labels=pedigree_labels
+    ).with_columns(pl.lit("has multiple own records").alias("error"))
+    errors_sd = pedigree.join(
+        get_parents_both_sires_and_dams(pedigree, parent_labels=pedigree_labels[1:3]),
+        left_on=pedigree_labels[0],
+        right_on="parents",
+    ).with_columns(pl.lit("is both sire and dam").alias("error"))
+
+    errors = pl.concat(
+        pl.collect_all(
+            [
+                errors_bbp,
+                errors_wor,
+                errors_op,
+                errors_mr,
+                errors_sd,
+            ]
+        )
+    )
+    is_valid_pedigree = errors.height == 0
+
+    # if there is a sex column then should also validate:
+    #   no sires are female
+    #   no dams are male
+
+    return is_valid_pedigree, errors
+
+
+def get_missing_records(
     pedigree: pl.LazyFrame | pl.DataFrame,
     pedigree_labels: tuple[str, str, str] = PedigreeLabels,
 ) -> pl.LazyFrame | pl.DataFrame:
-    """Returns pedigree with new records added for parents without their own"""
+    """Returns new records for parents without their own"""
     animal = pedigree_labels[0]
 
-    new_records = get_parents_without_own_record(
+    return get_parents_without_own_record(
         pedigree, pedigree_labels=pedigree_labels
     ).select(
         pl.col("parents").alias(animal),
@@ -149,6 +201,14 @@ def add_missing_records(
             if col != animal
         ],
     )
+
+
+def add_missing_records(
+    pedigree: pl.LazyFrame | pl.DataFrame,
+    pedigree_labels: tuple[str, str, str] = PedigreeLabels,
+) -> pl.LazyFrame | pl.DataFrame:
+    """Returns pedigree with new records added for parents without their own"""
+    new_records = get_missing_records(pedigree, pedigree_labels=pedigree_labels)
 
     return pl.concat([new_records, pedigree])
 
