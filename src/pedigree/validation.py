@@ -253,9 +253,23 @@ def recode_pedigree(
     id_map = pedigree.select(animal).with_row_index(name="recoded", offset=1)
 
     new_pedigree = (
-        pedigree.join(id_map, on=animal, how="left")
-        .join(id_map, left_on=sire, right_on=animal, how="left", suffix="_sire")
-        .join(id_map, left_on=dam, right_on=animal, how="left", suffix="_dam")
+        pedigree.join(id_map, on=animal, how="left", coalesce=False)
+        .join(
+            id_map,
+            left_on=sire,
+            right_on=animal,
+            how="left",
+            coalesce=False,
+            suffix="_sire",
+        )
+        .join(
+            id_map,
+            left_on=dam,
+            right_on=animal,
+            how="left",
+            coalesce=False,
+            suffix="_dam",
+        )
     )
     return new_pedigree.select(
         pl.col("recoded").alias(animal),

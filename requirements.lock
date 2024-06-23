@@ -9,7 +9,5 @@
 #   generate-hashes: false
 
 -e file:.
-numpy==1.26.4
-    # via pedigree
-polars==0.20.27
+polars==0.20.31
     # via pedigree

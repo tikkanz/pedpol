@@ -12,13 +12,13 @@ pl.Config.set_tbl_rows(15)
 data_dir = Path("/home/rishe0/dev/pedigree/tests/resources")
 
 ped_jv = pl.read_csv(
-    data_dir / "ped_jv.csv", dtypes=3 * [pl.Int32], comment_prefix="#"
+    data_dir / "ped_jv.csv", schema_overrides=3 * [pl.Int32], comment_prefix="#"
 ).pipe(
     null_unknown_parents,
 )
 
 ped_lit = pl.read_csv(
-    data_dir / "ped_literal.csv", dtypes=3 * [pl.Utf8], comment_prefix="#"
+    data_dir / "ped_literal.csv", schema_overrides=3 * [pl.Utf8], comment_prefix="#"
 ).pipe(null_unknown_parents, parent_labels=("Father", "Mother"))
 
 ids = [3, 4]

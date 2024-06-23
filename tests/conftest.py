@@ -11,7 +11,7 @@ data_dir = Path("/home/rishe0/dev/pedigree/tests/resources")
 @pytest.fixture
 def ped_basic():
     return pl.read_csv(
-        data_dir / "ped_basic.csv", dtypes=3 * [pl.Int32], comment_prefix="#"
+        data_dir / "ped_basic.csv", schema_overrides=3 * [pl.Int32], comment_prefix="#"
     ).pipe(null_unknown_parents, parent_labels=("Sire", "Dam"))
 
 
@@ -19,7 +19,7 @@ def ped_basic():
 def ped_jv():
     """pedigree from Zhang et. al. 2009"""
     ped = pl.read_csv(
-        data_dir / "ped_jv.csv", dtypes=3 * [pl.Int32], comment_prefix="#"
+        data_dir / "ped_jv.csv", schema_overrides=3 * [pl.Int32], comment_prefix="#"
     ).pipe(
         null_unknown_parents,
     )
@@ -31,7 +31,9 @@ def ped_circular():
     """cannot be correctly sorted
     Test for circular pedigree by sorting then check if sorted?"""
     ped = pl.read_csv(
-        data_dir / "ped_circular.csv", dtypes=3 * [pl.Int32], comment_prefix="#"
+        data_dir / "ped_circular.csv",
+        schema_overrides=3 * [pl.Int32],
+        comment_prefix="#",
     ).pipe(
         null_unknown_parents,
     )
@@ -48,7 +50,7 @@ def ped_errors():
      * multisex parent,
      * parents with no own record"""
     ped = pl.read_csv(
-        data_dir / "ped_errors.csv", dtypes=3 * [pl.Int32], comment_prefix="#"
+        data_dir / "ped_errors.csv", schema_overrides=3 * [pl.Int32], comment_prefix="#"
     ).pipe(null_unknown_parents, parent_labels=("sire", "dam"))
     return ped, (ped.columns)
 
@@ -56,7 +58,7 @@ def ped_errors():
 @pytest.fixture
 def ped_lit():
     ped = pl.read_csv(
-        data_dir / "ped_literal.csv", dtypes=3 * [pl.Utf8], comment_prefix="#"
+        data_dir / "ped_literal.csv", schema_overrides=3 * [pl.Utf8], comment_prefix="#"
     ).pipe(null_unknown_parents, parent_labels=("Father", "Mother"))
     return ped, (ped.columns)
 

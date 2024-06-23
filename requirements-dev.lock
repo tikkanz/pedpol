@@ -22,11 +22,11 @@ executing==2.0.1
 iniconfig==2.0.0
     # via pytest
 ipykernel==6.29.4
-ipython==8.24.0
+ipython==8.25.0
     # via ipykernel
 jedi==0.19.1
     # via ipython
-jupyter-client==8.6.1
+jupyter-client==8.6.2
     # via ipykernel
 jupyter-core==5.7.2
     # via ipykernel
@@ -37,8 +37,7 @@ matplotlib-inline==0.1.7
 nest-asyncio==1.6.0
     # via ipykernel
 numpy==1.26.4
-    # via pedigree
-packaging==24.0
+packaging==24.1
     # via ipykernel
     # via pytest
 parso==0.8.4
@@ -49,11 +48,11 @@ platformdirs==4.2.2
     # via jupyter-core
 pluggy==1.5.0
     # via pytest
-polars==0.20.27
+polars==0.20.31
     # via pedigree
-prompt-toolkit==3.0.43
+prompt-toolkit==3.0.47
     # via ipython
-psutil==5.9.8
+psutil==6.0.0
     # via ipykernel
 ptyprocess==0.7.0
     # via pexpect
@@ -61,19 +60,19 @@ pure-eval==0.2.2
     # via stack-data
 pygments==2.18.0
     # via ipython
-pytest==8.2.1
+pytest==8.2.2
 python-dateutil==2.9.0.post0
     # via jupyter-client
 pyzmq==26.0.3
     # via ipykernel
     # via jupyter-client
-ruff==0.4.4
+ruff==0.4.10
 six==1.16.0
     # via asttokens
     # via python-dateutil
 stack-data==0.6.3
     # via ipython
-tornado==6.4
+tornado==6.4.1
     # via ipykernel
     # via jupyter-client
 traitlets==5.14.3
