@@ -1,6 +1,7 @@
 import polars as pl
 
 from pedigree.core import ParentLabels, PedigreeLabels, parents
+from pedigree.generations import classify_generations
 
 
 def get_parents_both_sires_and_dams(
@@ -54,12 +55,16 @@ def get_animals_are_own_parent(
 def get_animals_born_before_parents(
     pedigree: pl.LazyFrame | pl.DataFrame,
     pedigree_labels: tuple[str, str, str] = PedigreeLabels,
-    age_column: str = "generation",
+    age_column: str | None = None,
 ) -> pl.LazyFrame | pl.DataFrame:
     """Returns any animals that are used as a sire before they were born
 
     `age_column` is column in `pedigree` to use for age comparisons. For example
     'birth_year' or 'generation'"""
+    if age_column is None:
+        pedigree = classify_generations(pedigree, pedigree_labels=pedigree_labels)
+        age_column = "generation"
+
     animal, sire, dam = pedigree_labels
     pedigree = pedigree.lazy()
     return pl.concat(

@@ -58,11 +58,25 @@ def test_generation_classification_of_invalid_pedigree(ped_circular_classified):
 
 
 def test_no_anims_born_before_parents(ped_jv_classified):
-    assert get_animals_born_before_parents(*ped_jv_classified).height == 0
+    assert (
+        get_animals_born_before_parents(
+            *ped_jv_classified, age_column="generation"
+        ).height
+        == 0
+    )
 
 
 def test_find_animals_born_before_their_parents(ped_circular_classified):
-    assert get_animals_born_before_parents(*ped_circular_classified).height > 0
+    assert (
+        get_animals_born_before_parents(
+            *ped_circular_classified, age_column="generation"
+        ).height
+        > 0
+    )
+
+
+def test_classify_and_find_animals_born_before_their_parents(ped_circular):
+    assert get_animals_born_before_parents(*ped_circular).height > 0
 
 
 def test_number_of_multiple_records_found(ped_errors):
