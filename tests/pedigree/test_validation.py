@@ -33,22 +33,24 @@ def test_record_of_animal_that_is_their_own_parent(anims_are_own_parent):
     assert anims_are_own_parent.to_dicts() == [{"anim": 5, "sire": 9, "dam": 5}]
 
 
-def test_no_anims_born_before_parents(ped_jv):
+@pytest.fixture
+def ped_jv_classified(ped_jv):
     ped, lbls = ped_jv
-    assert (
-        get_animals_born_before_parents(classify_generations(ped, lbls), lbls).height
-        == 0
-    )
+    return classify_generations(ped, lbls), lbls
 
 
 @pytest.fixture
-def anims_born_before_parents(ped_circular):
+def ped_circular_classified(ped_circular):
     ped, lbls = ped_circular
-    return get_animals_born_before_parents(classify_generations(ped, lbls), lbls)
+    return classify_generations(ped, lbls), lbls
 
 
-def test_find_animals_born_before_their_parents(anims_born_before_parents):
-    assert anims_born_before_parents.height == 14
+def test_no_anims_born_before_parents(ped_jv_classified):
+    assert get_animals_born_before_parents(*ped_jv_classified).height == 0
+
+
+def test_find_animals_born_before_their_parents(ped_circular_classified):
+    assert get_animals_born_before_parents(*ped_circular_classified).height == 14
 
 
 def test_number_of_multiple_records_found(ped_errors):
