@@ -1,6 +1,6 @@
 import polars as pl
 
-from pedigree.core import ParentLabels, PedigreeLabels, parents
+from pedigree.core import ParentLabels, PedigreeLabels, SexIds, SexLabel, parents
 from pedigree.generations import classify_generations
 
 
@@ -55,36 +55,36 @@ def get_animals_are_own_parent(
 def get_animals_born_before_parents(
     pedigree: pl.LazyFrame | pl.DataFrame,
     pedigree_labels: tuple[str, str, str] = PedigreeLabels,
-    age_column: str | None = None,
+    age_label: str | None = None,
 ) -> pl.LazyFrame | pl.DataFrame:
     """Returns any animals that are used as a sire before they were born
 
-    `age_column` is column in `pedigree` to use for age comparisons. For example
+    `age_label` is column in `pedigree` to use for age comparisons. For example
     'birth_year' or 'generation'"""
-    if age_column is None:
+    if age_label is None:
         pedigree = classify_generations(
             pedigree, pedigree_labels=pedigree_labels
         ).lazy()
-        age_column = "generation"
+        age_label = "generation"
 
     animal, sire, dam = pedigree_labels
     return pl.concat(
         [
             pedigree.join(
-                pedigree.select(animal, age_column),
+                pedigree.select(animal, age_label),
                 left_on=sire,
                 right_on=animal,
                 suffix="_parent",
             )
-            .filter(pl.col(age_column) <= pl.col(f"{age_column}_parent"))
+            .filter(pl.col(age_label) <= pl.col(f"{age_label}_parent"))
             .with_columns(pl.lit(f"was born before {sire}").alias("error")),
             pedigree.join(
-                pedigree.select(animal, age_column),
+                pedigree.select(animal, age_label),
                 left_on=dam,
                 right_on=animal,
                 suffix="_parent",
             )
-            .filter(pl.col(age_column) <= pl.col(f"{age_column}_parent"))
+            .filter(pl.col(age_label) <= pl.col(f"{age_label}_parent"))
             .with_columns(pl.lit(f"was born before {dam}").alias("error")),
         ]
     )
@@ -93,23 +93,23 @@ def get_animals_born_before_parents(
 def get_animals_are_sires_before_birth(
     pedigree: pl.LazyFrame | pl.DataFrame,
     pedigree_labels: tuple[str, str, str] = PedigreeLabels,
-    age_column: str = "generation",
+    age_label: str = "generation",
 ) -> pl.LazyFrame | pl.DataFrame:
     """Returns any animals that are used as a sire before they were born
 
-    `age_column` is column in `pedigree` to use for age comparisons. For example
+    `age_label` is column in `pedigree` to use for age comparisons. For example
     'birth_year' or 'generation'"""
     animal, sire, dam = pedigree_labels
 
     return (
         pedigree.lazy()
         .join(
-            pedigree.lazy().group_by(sire).agg(pl.col(age_column).min()),
+            pedigree.lazy().group_by(sire).agg(pl.col(age_label).min()),
             left_on=animal,
             right_on=sire,
             suffix="_as_parent",
         )
-        .filter(pl.col(age_column) >= pl.col(f"{age_column}_as_parent"))
+        .filter(pl.col(age_label) >= pl.col(f"{age_label}_as_parent"))
         .collect()
     )
 
@@ -117,27 +117,58 @@ def get_animals_are_sires_before_birth(
 def get_animals_are_dams_before_birth(
     pedigree: pl.LazyFrame | pl.DataFrame,
     pedigree_labels: tuple[str, str, str] = PedigreeLabels,
-    age_column: str = "generation",
+    age_label: str = "generation",
 ) -> pl.LazyFrame | pl.DataFrame:
     """Returns any animals that are used as a dam before they were born
 
-    `age_column` is column in `pedigree` to use for age comparisons. For example
+    `age_label` is column in `pedigree` to use for age comparisons. For example
     'birth_year' or 'generation'"""
     animal, sire, dam = pedigree_labels
 
     return pedigree.join(
-        pedigree.group_by(dam).agg(pl.col(age_column).min()),
+        pedigree.group_by(dam).agg(pl.col(age_label).min()),
         left_on=animal,
         right_on=dam,
         suffix="_as_parent",
-    ).filter(pl.col(age_column) >= pl.col(f"{age_column}_as_parent"))
+    ).filter(pl.col(age_label) >= pl.col(f"{age_label}_as_parent"))
+
+
+def get_female_sires(
+    pedigree: pl.LazyFrame | pl.DataFrame,
+    pedigree_labels: tuple[str, str, str] = PedigreeLabels,
+    sex_label: str = SexLabel,
+    sex_codes: tuple[any, any] = SexIds,
+) -> pl.LazyFrame | pl.DataFrame:
+    animal, sire, dam = pedigree_labels
+    male, female = sex_codes
+    return (
+        pedigree.filter(pl.col(sex_label) == female)
+        .join(pedigree.select(sire), left_on=animal, right_on=sire)
+        .unique()
+    )
+
+
+def get_male_dams(
+    pedigree: pl.LazyFrame | pl.DataFrame,
+    pedigree_labels: tuple[str, str, str] = PedigreeLabels,
+    sex_label: str = SexLabel,
+    sex_codes: tuple[any, any] = SexIds,
+) -> pl.LazyFrame | pl.DataFrame:
+    animal, sire, dam = pedigree_labels
+    male, female = sex_codes
+    return (
+        pedigree.filter(pl.col(sex_label) == male)
+        .join(pedigree.select(dam), left_on=animal, right_on=dam)
+        .unique()
+    )
 
 
 def validate_pedigree(
     pedigree: pl.LazyFrame | pl.DataFrame,
     pedigree_labels: tuple[str, str, str] = PedigreeLabels,
-    age_column: str | None = None,
-    sex_column: str | None = None,
+    age_label: str | None = None,
+    sex_label: str | None = None,
+    sex_codes: tuple[any, any] | None = None,
 ) -> bool:
     """Validates a pedigree"""
     # return false if pedigree doesn't have 3 columns (animal, sire, dam)
@@ -149,7 +180,7 @@ def validate_pedigree(
     errors = []
     errors.append(
         get_animals_born_before_parents(
-            pedigree, pedigree_labels=pedigree_labels, age_column=age_column
+            pedigree, pedigree_labels=pedigree_labels, age_label=age_label
         ).select(*pedigree.columns, "error")
     )
     errors.append(
@@ -176,9 +207,23 @@ def validate_pedigree(
             right_on="parents",
         ).with_columns(pl.lit("is both sire and dam").alias("error"))
     )
-    # if there is a sex column then should also validate:
-    #   no sires are female
-    #   no dams are male
+    if sex_label:
+        errors.append(
+            get_female_sires(
+                pedigree,
+                pedigree_labels=pedigree_labels,
+                sex_label=sex_label,
+                sex_codes=sex_codes,
+            ).with_columns(pl.lit("is a female sire"))
+        )
+        errors.append(
+            get_male_dams(
+                pedigree,
+                pedigree_labels=pedigree_labels,
+                sex_label=sex_label,
+                sex_codes=sex_codes,
+            ).with_columns(pl.lit("is a male dam"))
+        )
 
     errors = pl.concat(pl.collect_all(errors))
     is_valid_pedigree = errors.height == 0

@@ -6,6 +6,22 @@ PedigreeLabels = ("animal", "sire", "dam")
 ParentLabels = ("sire", "dam")
 """Default labels for male (1st) & female (2nd) parents"""
 
+SexLabel = "sex"
+"""Default label for column describing the sex of an animal"""
+
+SexIds = (1, 2)
+"""Default Ids for male (1st) & female (2nd) animals"""
+
+SexCodes = {
+    1: 1,
+    2: 2,
+    "M": 1,
+    "F": 2,
+    "male": 1,
+    "female": 2,
+}
+"""Mapping of common sex codes to SexId"""
+
 
 def is_integer(df: pl.LazyFrame | pl.DataFrame, column) -> bool:
     """Determines if the specified column in the DataFrame has an integer type"""

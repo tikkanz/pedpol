@@ -7,6 +7,8 @@ from pedigree.validation import (
     get_animals_are_own_parent,
     get_animals_born_before_parents,
     get_animals_with_multiple_records,
+    get_female_sires,
+    get_male_dams,
     get_parents_both_sires_and_dams,
     get_parents_without_own_record,
     null_parents_without_own_record,
@@ -46,6 +48,17 @@ def ped_circular_classified(ped_circular):
     return classify_generations(ped, lbls), lbls
 
 
+@pytest.fixture
+def ped_errors_sex(ped_errors):
+    ped, lbls = ped_errors
+    return ped.with_columns((pl.col(lbls[0]) % 2 + 1).alias("sex")), lbls
+
+
+def test_find_parent_sex_errors(ped_errors_sex):
+    assert get_female_sires(*ped_errors_sex).height == 2
+    assert get_male_dams(*ped_errors_sex).height == 1
+
+
 def test_generation_classification_of_valid_pedigree(ped_jv_classified):
     assert ped_jv_classified[0].get_column("generation").value_counts().sort(
         by="generation"
@@ -61,7 +74,7 @@ def test_generation_classification_of_invalid_pedigree(ped_circular_classified):
 def test_no_anims_born_before_parents(ped_jv_classified):
     assert (
         get_animals_born_before_parents(
-            *ped_jv_classified, age_column="generation"
+            *ped_jv_classified, age_label="generation"
         ).height
         == 0
     )
@@ -70,7 +83,7 @@ def test_no_anims_born_before_parents(ped_jv_classified):
 def test_find_animals_born_before_their_parents(ped_circular_classified):
     assert (
         get_animals_born_before_parents(
-            *ped_circular_classified, age_column="generation"
+            *ped_circular_classified, age_label="generation"
         ).height
         > 0
     )
@@ -129,7 +142,7 @@ def test_validate_valid_pedigree_no_age(ped_lit):
 
 
 def test_validate_valid_pedigree(ped_jv_classified):
-    valid, errors = validate_pedigree(*ped_jv_classified, age_column="generation")
+    valid, errors = validate_pedigree(*ped_jv_classified, age_label="generation")
     assert valid
     assert errors.height == 0
 
