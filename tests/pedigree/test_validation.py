@@ -1,9 +1,11 @@
 import polars as pl
 import pytest
 from pedigree.core import parents
+from pedigree.generations import classify_generations
 from pedigree.validation import (
     add_missing_records,
     get_animals_are_own_parent,
+    get_animals_born_before_parents,
     get_animals_with_multiple_records,
     get_parents_both_sires_and_dams,
     get_parents_without_own_record,
@@ -16,13 +18,11 @@ pl.Config.set_tbl_rows(15)
 
 @pytest.fixture
 def anims_are_own_parent(ped_errors):
-    return get_animals_are_own_parent(ped_errors, ("anim", "sire", "dam"))
+    return get_animals_are_own_parent(*ped_errors)
 
 
 def test_no_anims_are_own_parent(ped_lit):
-    assert (
-        get_animals_are_own_parent(ped_lit, ("Child", "Father", "Mother")).height == 0
-    )
+    assert get_animals_are_own_parent(*ped_lit).height == 0
 
 
 def test_number_of_animals_that_are_their_own_parent(anims_are_own_parent):
@@ -33,38 +33,46 @@ def test_record_of_animal_that_is_their_own_parent(anims_are_own_parent):
     assert anims_are_own_parent.to_dicts() == [{"anim": 5, "sire": 9, "dam": 5}]
 
 
-def test_number_of_multiple_records_found(ped_errors):
+def test_no_anims_born_before_parents(ped_jv):
+    ped, lbls = ped_jv
     assert (
-        get_animals_with_multiple_records(ped_errors, ("anim", "sire", "dam")).height
-        == 2
-    )
-
-
-def test_no_multiple_records_found(ped_lit):
-    assert (
-        get_animals_with_multiple_records(ped_lit, ("Child", "Father", "Mother")).height
+        get_animals_born_before_parents(classify_generations(ped, lbls), lbls).height
         == 0
     )
 
 
+@pytest.fixture
+def anims_born_before_parents(ped_circular):
+    ped, lbls = ped_circular
+    return get_animals_born_before_parents(classify_generations(ped, lbls), lbls)
+
+
+def test_find_animals_born_before_their_parents(anims_born_before_parents):
+    assert anims_born_before_parents.height == 14
+
+
+def test_number_of_multiple_records_found(ped_errors):
+    assert get_animals_with_multiple_records(*ped_errors).height == 2
+
+
+def test_no_multiple_records_found(ped_lit):
+    assert get_animals_with_multiple_records(*ped_lit).height == 0
+
+
 def test_find_parents_that_are_both_sire_and_dam(ped_errors):
-    assert get_parents_both_sires_and_dams(ped_errors).height > 0
+    assert get_parents_both_sires_and_dams(ped_errors[0]).height > 0
 
 
 def test_no_parents_are_both_sire_and_dam(ped_jv):
-    assert get_parents_both_sires_and_dams(ped_jv).height == 0
+    assert get_parents_both_sires_and_dams(ped_jv[0]).height == 0
 
 
 def test_all_parents_have_own_record(ped_jv):
-    assert (
-        get_parents_without_own_record(ped_jv, ("progeny", "sire", "dam")).height == 0
-    )
+    assert get_parents_without_own_record(*ped_jv).height == 0
 
 
 def test_find_parents_without_own_record(ped_lit):
-    assert get_parents_without_own_record(ped_lit, ("Child", "Father", "Mother"))[
-        "parents"
-    ].sort().to_list() == [
+    assert get_parents_without_own_record(*ped_lit)["parents"].sort().to_list() == [
         "Daisey",
         "Fatma",
         "George",
@@ -78,14 +86,12 @@ def test_find_parents_without_own_record(ped_lit):
 
 
 def test_add_record_for_parents_without_their_own(ped_errors):
-    assert ped_errors.pipe(add_missing_records, ("anim", "sire", "dam")).height == (
-        ped_errors.height + 1
-    )
+    assert add_missing_records(*ped_errors).height == (ped_errors[0].height + 1)
 
 
 def test_null_parents_without_own_record(ped_lit):
     assert (
-        ped_lit.pipe(null_parents_without_own_record, ("Child", "Father", "Mother"))
+        null_parents_without_own_record(*ped_lit)
         .select(parents(("Father", "Mother")))
         .height
         == 5
@@ -93,8 +99,9 @@ def test_null_parents_without_own_record(ped_lit):
 
 
 def test_recode_ids(ped_lit):
-    tmp = ped_lit.pipe(add_missing_records, ("Child", "Father", "Mother"))
-    recoded_ped, id_map = recode_pedigree(tmp, ("Child", "Father", "Mother"))
+    ped, lbls = ped_lit
+    tmp = add_missing_records(ped, lbls)
+    recoded_ped, id_map = recode_pedigree(tmp, lbls)
     assert recoded_ped["Child"].to_list() == [
         1,
         2,

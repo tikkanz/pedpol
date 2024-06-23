@@ -18,22 +18,24 @@ def ped_basic():
 @pytest.fixture
 def ped_jv():
     """pedigree from Zhang et. al. 2009"""
-    return pl.read_csv(
+    ped = pl.read_csv(
         data_dir / "ped_jv.csv", dtypes=3 * [pl.Int32], comment_prefix="#"
     ).pipe(
         null_unknown_parents,
     )
+    return ped, (ped.columns)
 
 
 @pytest.fixture
 def ped_circular():
     """cannot be correctly sorted
     Test for circular pedigree by sorting then check if sorted?"""
-    return pl.read_csv(
+    ped = pl.read_csv(
         data_dir / "ped_circular.csv", dtypes=3 * [pl.Int32], comment_prefix="#"
     ).pipe(
         null_unknown_parents,
     )
+    return ped, (ped.columns)
 
 
 @pytest.fixture
@@ -45,16 +47,18 @@ def ped_errors():
      * multiple pedigree records for an animal,
      * multisex parent,
      * parents with no own record"""
-    return pl.read_csv(
+    ped = pl.read_csv(
         data_dir / "ped_errors.csv", dtypes=3 * [pl.Int32], comment_prefix="#"
     ).pipe(null_unknown_parents, parent_labels=("sire", "dam"))
+    return ped, (ped.columns)
 
 
 @pytest.fixture
 def ped_lit():
-    return pl.read_csv(
+    ped = pl.read_csv(
         data_dir / "ped_literal.csv", dtypes=3 * [pl.Utf8], comment_prefix="#"
     ).pipe(null_unknown_parents, parent_labels=("Father", "Mother"))
+    return ped, (ped.columns)
 
 
 ped_literal_str = StringIO("""Child,Father,Mother
