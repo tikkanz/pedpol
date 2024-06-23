@@ -11,6 +11,7 @@ from pedigree.validation import (
     get_parents_without_own_record,
     null_parents_without_own_record,
     recode_pedigree,
+    validate_pedigree,
 )
 
 pl.Config.set_tbl_rows(15)
@@ -111,6 +112,32 @@ def test_find_parents_without_own_record(ped_lit):
         "Susan",
         "Tom",
     ]
+
+
+def test_validate_invalid_pedigree_no_age(ped_lit):
+    ped, lbls = ped_lit
+    valid, errors = validate_pedigree(ped, lbls)
+    assert not valid
+    assert errors.height > 0
+
+
+def test_validate_valid_pedigree_no_age(ped_lit):
+    ped, lbls = ped_lit
+    valid, errors = validate_pedigree(add_missing_records(ped, lbls), lbls)
+    assert valid
+    assert errors.height == 0
+
+
+def test_validate_valid_pedigree(ped_jv_classified):
+    valid, errors = validate_pedigree(*ped_jv_classified, age_column="generation")
+    assert valid
+    assert errors.height == 0
+
+
+def test_validate_invalid_pedigree(ped_errors):
+    valid, errors = validate_pedigree(*ped_errors)
+    assert not valid
+    assert errors.height > 0
 
 
 def test_add_record_for_parents_without_their_own(ped_errors):

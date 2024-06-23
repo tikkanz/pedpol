@@ -146,40 +146,42 @@ def validate_pedigree(
         return is_valid_pedigree, "Columns missing from Pedigree DataFrame"
 
     pedigree = pedigree.lazy()
-    errors_bbp = get_animals_born_before_parents(
-        pedigree, pedigree_labels=pedigree_labels, age_column=age_column
-    ).select(*pedigree_labels, "error")
-    errors_wor = get_missing_records(
-        pedigree, pedigree_labels=pedigree_labels
-    ).with_columns(pl.lit("has no own record").alias("error"))
-    errors_op = get_animals_are_own_parent(
-        pedigree, pedigree_labels=pedigree_labels
-    ).with_columns(pl.lit("is own parent").alias("error"))
-    errors_mr = get_animals_with_multiple_records(
-        pedigree, pedigree_labels=pedigree_labels
-    ).with_columns(pl.lit("has multiple own records").alias("error"))
-    errors_sd = pedigree.join(
-        get_parents_both_sires_and_dams(pedigree, parent_labels=pedigree_labels[1:3]),
-        left_on=pedigree_labels[0],
-        right_on="parents",
-    ).with_columns(pl.lit("is both sire and dam").alias("error"))
-
-    errors = pl.concat(
-        pl.collect_all(
-            [
-                errors_bbp,
-                errors_wor,
-                errors_op,
-                errors_mr,
-                errors_sd,
-            ]
-        )
+    errors = []
+    errors.append(
+        get_animals_born_before_parents(
+            pedigree, pedigree_labels=pedigree_labels, age_column=age_column
+        ).select(*pedigree.columns, "error")
     )
-    is_valid_pedigree = errors.height == 0
-
+    errors.append(
+        get_missing_records(pedigree, pedigree_labels=pedigree_labels).with_columns(
+            pl.lit("has no own record").alias("error")
+        )
+    )  # records for parents with no own record
+    errors.append(
+        get_animals_are_own_parent(
+            pedigree, pedigree_labels=pedigree_labels
+        ).with_columns(pl.lit("is own parent").alias("error"))
+    )
+    errors.append(
+        get_animals_with_multiple_records(
+            pedigree, pedigree_labels=pedigree_labels
+        ).with_columns(pl.lit("has multiple own records").alias("error"))
+    )
+    errors.append(
+        pedigree.join(
+            get_parents_both_sires_and_dams(
+                pedigree, parent_labels=pedigree_labels[1:3]
+            ),
+            left_on=pedigree_labels[0],
+            right_on="parents",
+        ).with_columns(pl.lit("is both sire and dam").alias("error"))
+    )
     # if there is a sex column then should also validate:
     #   no sires are female
     #   no dams are male
+
+    errors = pl.concat(pl.collect_all(errors))
+    is_valid_pedigree = errors.height == 0
 
     return is_valid_pedigree, errors
 
