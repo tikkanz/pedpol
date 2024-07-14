@@ -214,7 +214,7 @@ def validate_pedigree(
                 pedigree_labels=pedigree_labels,
                 sex_label=sex_label,
                 sex_codes=sex_codes,
-            ).with_columns(pl.lit("is a female sire"))
+            ).with_columns(pl.lit("is a female sire").alias("error"))
         )
         errors.append(
             get_male_dams(
@@ -222,7 +222,7 @@ def validate_pedigree(
                 pedigree_labels=pedigree_labels,
                 sex_label=sex_label,
                 sex_codes=sex_codes,
-            ).with_columns(pl.lit("is a male dam"))
+            ).with_columns(pl.lit("is a male dam").alias("error"))
         )
 
     errors = pl.concat(pl.collect_all(errors))
