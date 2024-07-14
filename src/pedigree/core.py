@@ -3,9 +3,6 @@ import polars as pl
 PedigreeLabels = ("animal", "sire", "dam")
 """Default labels for individual (1st) male parent (2nd) & female parent (3rd)"""
 
-ParentLabels = ("sire", "dam")
-"""Default labels for male (1st) & female (2nd) parents"""
-
 SexLabel = "sex"
 """Default label for column describing the sex of an animal"""
 
@@ -45,7 +42,7 @@ def get_unknown_parent_value(
 
 def null_unknown_parents(
     pedigree: pl.LazyFrame | pl.DataFrame,
-    parent_labels: tuple[str, str] = ParentLabels,
+    parent_labels: tuple[str, str] = PedigreeLabels[1:],
     unknown_parent_value=None,
 ) -> pl.LazyFrame | pl.DataFrame:
     """Replaces the parent Id used to represent an 'unknown' parent with null
@@ -85,7 +82,7 @@ def pedigree_ids(pedigree_labels: tuple[str, str, str] = PedigreeLabels) -> pl.E
     )
 
 
-def parents(parent_labels: tuple[str, str] = ParentLabels) -> pl.Expr:
+def parents(parent_labels: tuple[str, str] = PedigreeLabels[1:]) -> pl.Expr:
     """Returns an expression describing the parents in a pedigree
 
     ### Example use:
@@ -98,7 +95,8 @@ def parents(parent_labels: tuple[str, str] = ParentLabels) -> pl.Expr:
 
 
 def get_parents(
-    pedigree: pl.LazyFrame | pl.DataFrame, parent_labels: tuple[str, str] = ParentLabels
+    pedigree: pl.LazyFrame | pl.DataFrame,
+    parent_labels: tuple[str, str] = PedigreeLabels[1:],
 ) -> pl.LazyFrame | pl.DataFrame:
     """Returns a Dataframe containing the parents in a pedigree
 

@@ -1,12 +1,12 @@
 import polars as pl
 
-from pedigree.core import ParentLabels, PedigreeLabels, SexIds, SexLabel, parents
+from pedigree.core import PedigreeLabels, SexIds, SexLabel, parents
 from pedigree.generations import classify_generations
 
 
 def get_parents_both_sires_and_dams(
     pedigree: pl.LazyFrame | pl.DataFrame,
-    parent_labels: tuple[str, str] = ParentLabels,
+    parent_labels: tuple[str, str] = PedigreeLabels[1:],
 ) -> pl.LazyFrame | pl.DataFrame:
     """Returns any animals that are both sires and dams"""
     sire, dam = parent_labels
