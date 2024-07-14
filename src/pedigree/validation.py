@@ -268,7 +268,7 @@ def null_parents_without_own_record(
     parent_cols = pedigree_labels[1:]
     null_parents = get_parents_without_own_record(
         pedigree, pedigree_labels=pedigree_labels
-    )
+    ).collect()
     return pedigree.with_columns(
         *[
             pl.when(pl.col(col).is_in(null_parents))
