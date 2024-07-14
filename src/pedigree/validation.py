@@ -267,7 +267,7 @@ def null_parents_without_own_record(
     """Returns pedigree where parents without their own record are marked as `null`"""
     parent_cols = pedigree_labels[1:]
     null_parents = get_parents_without_own_record(
-        pedigree, pedigree_labels=pedigree_labels
+        pedigree.lazy(), pedigree_labels=pedigree_labels
     ).collect()
     return pedigree.with_columns(
         *[
