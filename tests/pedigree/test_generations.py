@@ -1,50 +1,19 @@
-from pathlib import Path
+def test_generation_classification_of_valid_pedigree(ped_jv_classified):
+    assert ped_jv_classified[0].get_column("generation").value_counts().sort(
+        by="generation"
+    ).get_column("count").to_list() == [2, 6, 4, 2, 1]
 
-import polars as pl
-from pedigree.core import null_unknown_parents
-from pedigree.generations import (
-    classify_generations,
-    get_ancestors_of,
-    get_descendants_of,
-)
 
-pl.Config.set_tbl_rows(15)
-data_dir = Path("/home/rishe0/dev/pedigree/tests/resources")
+def test_generation_classification_of_invalid_pedigree(ped_circular_classified):
+    assert ped_circular_classified[0].get_column("generation").value_counts().sort(
+        by="generation"
+    ).get_column("count").to_list() == [9, 1]
 
-ped_jv = pl.read_csv(
-    data_dir / "ped_jv.csv", schema_overrides=3 * [pl.Int32], comment_prefix="#"
-).pipe(
-    null_unknown_parents,
-)
 
-ped_lit = pl.read_csv(
-    data_dir / "ped_literal.csv", schema_overrides=3 * [pl.Utf8], comment_prefix="#"
-).pipe(null_unknown_parents, parent_labels=("Father", "Mother"))
+# test_get_progeny_of
 
-ids = [3, 4]
-descendants = get_descendants_of(
-    ped_jv,
-    ids,
-    generations=6,
-    include_ids=False,
-    pedigree_labels=("progeny", "sire", "dam"),
-)
-print("Descendants of 3 & 4 (not including ids)", "\n", descendants)
+# test_get_parents_of
 
-ids = ["Kristi"]
-ancestors = get_ancestors_of(
-    ped_lit.lazy(),
-    ids,
-    generations=2,
-    include_ids=True,
-    pedigree_labels=("Child", "Father", "Mother"),
-)
-print("Ancestors of Kristi (including ids)", "\n", ancestors.collect())
+# test_get_ancestors_of
 
-ped_jv = ped_jv.pipe(classify_generations, pedigree_labels=("progeny", "sire", "dam"))
-print("Classified ped_jv", "\n", ped_jv)
-
-ped_lit = ped_lit.pipe(
-    classify_generations, pedigree_labels=("Child", "Father", "Mother")
-)
-print("Classified ped_lit", "\n", ped_lit)
+# test_get_descendents_of

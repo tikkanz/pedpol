@@ -4,6 +4,7 @@ from pathlib import Path
 import polars as pl
 import pytest
 from pedigree.core import null_unknown_parents
+from pedigree.generations import classify_generations
 
 data_dir = Path("/home/rishe0/dev/pedigree/tests/resources")
 
@@ -77,3 +78,15 @@ Scott,Hein,Karen
 Kristi,Hein,Karen
 Helen,Hein,Emily
 """)
+
+
+@pytest.fixture
+def ped_jv_classified(ped_jv):
+    ped, lbls = ped_jv
+    return classify_generations(ped, lbls), lbls
+
+
+@pytest.fixture
+def ped_circular_classified(ped_circular):
+    ped, lbls = ped_circular
+    return classify_generations(ped, lbls), lbls

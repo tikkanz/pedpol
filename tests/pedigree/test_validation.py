@@ -1,7 +1,6 @@
 import polars as pl
 import pytest
 from pedigree.core import parents
-from pedigree.generations import classify_generations
 from pedigree.validation import (
     add_missing_records,
     get_animals_are_own_parent,
@@ -37,18 +36,6 @@ def test_record_of_animal_that_is_their_own_parent(anims_are_own_parent):
 
 
 @pytest.fixture
-def ped_jv_classified(ped_jv):
-    ped, lbls = ped_jv
-    return classify_generations(ped, lbls), lbls
-
-
-@pytest.fixture
-def ped_circular_classified(ped_circular):
-    ped, lbls = ped_circular
-    return classify_generations(ped, lbls), lbls
-
-
-@pytest.fixture
 def ped_errors_sex(ped_errors):
     ped, lbls = ped_errors
     return ped.with_columns((pl.col(lbls[0]) % 2 + 1).alias("sex")), lbls
@@ -57,18 +44,6 @@ def ped_errors_sex(ped_errors):
 def test_find_parent_sex_errors(ped_errors_sex):
     assert get_female_sires(*ped_errors_sex).height == 2
     assert get_male_dams(*ped_errors_sex).height == 1
-
-
-def test_generation_classification_of_valid_pedigree(ped_jv_classified):
-    assert ped_jv_classified[0].get_column("generation").value_counts().sort(
-        by="generation"
-    ).get_column("count").to_list() == [2, 6, 4, 2, 1]
-
-
-def test_generation_classification_of_invalid_pedigree(ped_circular_classified):
-    assert ped_circular_classified[0].get_column("generation").value_counts().sort(
-        by="generation"
-    ).get_column("count").to_list() == [9, 1]
 
 
 def test_no_anims_born_before_parents(ped_jv_classified):
