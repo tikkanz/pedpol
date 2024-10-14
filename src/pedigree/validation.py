@@ -181,7 +181,7 @@ def validate_pedigree(
     errors.append(
         get_animals_born_before_parents(
             pedigree, pedigree_labels=pedigree_labels, age_label=age_label
-        ).select(*pedigree.columns, "error")
+        ).select(*pedigree.collect_schema().names(), "error")
     )
     errors.append(
         get_missing_records(pedigree, pedigree_labels=pedigree_labels).with_columns(
@@ -244,7 +244,7 @@ def get_missing_records(
         pl.col("parents").alias(animal),
         *[
             pl.lit(None).cast(dtype).alias(col)
-            for col, dtype in pedigree.schema.items()
+            for col, dtype in pedigree.collect_schema().items()
             if col != animal
         ],
     )
