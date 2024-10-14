@@ -1,2 +1,2 @@
 def hello() -> str:
-    return "Hello from pedigree!"
+    return "Hello from pedpol!"
