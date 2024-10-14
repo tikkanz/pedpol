@@ -7,7 +7,7 @@ import pytest
 from pedpol.core import null_unknown_parents
 from pedpol.generations import classify_generations
 
-data_dir = Path("/home/rishe0/dev/pedpol/tests/resources")
+data_dir = Path(__file__).absolute().parent / "resources"
 
 
 @pytest.fixture
