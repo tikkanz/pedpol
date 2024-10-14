@@ -12,7 +12,7 @@ def get_parents_both_sires_and_dams(
     sire, dam = parent_labels
     return (
         pedigree.select(parents((sire,)))
-        .join(pedigree.select(dam), left_on="parents", right_on=dam, how="inner")
+        .join(pedigree.select(dam), left_on="parent", right_on=dam, how="inner")
         .unique()
     )
 
@@ -37,7 +37,7 @@ def get_parents_without_own_record(
     """Returns the parents that don't have their own record in the pedigree"""
     animal = pedigree_labels[0]
     return pedigree.select(parents(pedigree_labels[1:])).join(
-        pedigree, left_on="parents", right_on=animal, how="anti"
+        pedigree, left_on="parent", right_on=animal, how="anti"
     )
 
 
@@ -169,14 +169,17 @@ def validate_pedigree(
     age_label: str | None = None,
     sex_label: str | None = None,
     sex_codes: tuple[any, any] | None = None,
-) -> bool:
+) -> tuple[bool, pl.DataFrame]:
     """Validates a pedigree"""
-    # return false if pedigree doesn't have 3 columns (animal, sire, dam)
-    if pedigree.select(pedigree_labels).width != 3:
-        is_valid_pedigree = False
-        return is_valid_pedigree, "Columns missing from Pedigree DataFrame"
+    # Raise error if pedigree doesn't have 3 columns (animal, sire, dam)
+    if missing_lbls := [
+        lbl
+        for lbl in pedigree_labels
+        if lbl not in pedigree.lazy().collect_schema().names()
+    ]:
+        raise ValueError(f"Required column(s) {missing_lbls} not found in pedigree.")
 
-    pedigree = pedigree.lazy()
+    pedigree = pedigree.lazy().collect().lazy()
     errors = []
     errors.append(
         get_animals_born_before_parents(
@@ -204,7 +207,7 @@ def validate_pedigree(
                 pedigree, parent_labels=pedigree_labels[1:3]
             ),
             left_on=pedigree_labels[0],
-            right_on="parents",
+            right_on="parent",
         ).with_columns(pl.lit("is both sire and dam").alias("error"))
     )
     if sex_label:
@@ -241,7 +244,7 @@ def get_missing_records(
     return get_parents_without_own_record(
         pedigree, pedigree_labels=pedigree_labels
     ).select(
-        pl.col("parents").alias(animal),
+        pl.col("parent").alias(animal),
         *[
             pl.lit(None).cast(dtype).alias(col)
             for col, dtype in pedigree.collect_schema().items()

@@ -82,7 +82,25 @@ def pedigree_ids(pedigree_labels: tuple[str, str, str] = PedigreeLabels) -> pl.E
     )
 
 
-def parents(parent_labels: tuple[str, str] = PedigreeLabels[1:]) -> pl.Expr:
+def known_unique(column_expr: pl.Expr) -> pl.Expr:
+    return column_expr.drop_nulls().unique()
+
+
+def sires(sire_label: str = PedigreeLabels[1]) -> pl.Expr:
+    """Returns an expression describing the unique sires in a pedigree"""
+    return known_unique(sire_label).alias("Parent"), pl.lit(sire_label).alias(
+        "Parent_type"
+    )
+
+
+def dams(dam_label: str = PedigreeLabels[2]) -> pl.Expr:
+    """Returns an expression describing the unique dams in a pedigree"""
+    return known_unique(dam_label).alias("Parent"), pl.lit(dam_label).alias(
+        "Parent_type"
+    )
+
+
+def parents(parent_labels: tuple[str] = PedigreeLabels[1:]) -> pl.Expr:
     """Returns an expression describing the parents in a pedigree
 
     ### Example use:
@@ -90,18 +108,6 @@ def parents(parent_labels: tuple[str, str] = PedigreeLabels[1:]) -> pl.Expr:
     parents_df = ped_df.select(parents(("Father","Mother")))
     sires_df = ped_df.select(parents(("Father",)))
     ```"""
-    sire, dam = parent_labels[0], parent_labels[-1]
-    return pl.col(sire).append(pl.col(dam)).drop_nulls().unique().alias("parents")
-
-
-def get_parents(
-    pedigree: pl.LazyFrame | pl.DataFrame,
-    parent_labels: tuple[str, str] = PedigreeLabels[1:],
-) -> pl.LazyFrame | pl.DataFrame:
-    """Returns a Dataframe containing the parents in a pedigree
-
-    ### Example use:
-    ```python
-    parents_df = ped_df.pipe(get_parents, ("Father","Mother"))
-    ```"""
-    return pedigree.select(parents(parent_labels=parent_labels))
+    return pl.concat([known_unique(pl.col(pnt)) for pnt in parent_labels]).alias(
+        "parent"
+    )

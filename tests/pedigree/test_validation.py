@@ -1,5 +1,6 @@
 import polars as pl
 import pytest
+
 from pedigree.core import parents
 from pedigree.validation import (
     add_missing_records,
@@ -89,7 +90,7 @@ def test_all_parents_have_own_record(ped_jv):
 
 
 def test_find_parents_without_own_record(ped_lit):
-    assert get_parents_without_own_record(*ped_lit)["parents"].sort().to_list() == [
+    assert get_parents_without_own_record(*ped_lit)["parent"].sort().to_list() == [
         "Daisey",
         "Fatma",
         "George",

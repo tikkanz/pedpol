@@ -9,21 +9,23 @@ def get_progeny_of(
     pedigree: pl.DataFrame | pl.LazyFrame,
     ids: pl.Expr | Collection[any] | pl.Series,
     pedigree_labels: tuple[str, str, str] = PedigreeLabels,
-) -> pl.DataFrame | pl.LazyFrame:
+) -> pl.LazyFrame:
     """Return records for the progeny of the animals specified"""
-    return pedigree.filter(pl.any_horizontal(pl.col(pedigree_labels[1:]).is_in(ids)))
+    return pedigree.lazy().filter(
+        pl.any_horizontal(pl.col(pedigree_labels[1:]).is_in(ids))
+    )
 
 
 def get_parents_of(
     pedigree: pl.DataFrame | pl.LazyFrame,
     ids: pl.Expr | Collection[any] | pl.Series,
     pedigree_labels: tuple[str, str, str] = PedigreeLabels,
-) -> pl.DataFrame | pl.LazyFrame:
+) -> pl.LazyFrame:
     """Return records for the parents of the animals specified"""
     animal, sire, dam = pedigree_labels
     anims = pedigree.lazy().filter(pl.col(animal).is_in(ids))
-    prnts = anims.select(parents((sire, dam))).collect()
-    return pedigree.filter(pl.col(animal).is_in(prnts))
+    prnts = anims.select(parents((sire, dam)))
+    return pedigree.lazy().join(prnts, left_on=animal, right_on="parent")
 
 
 def _get_relatives_of(
@@ -33,24 +35,26 @@ def _get_relatives_of(
     generations: int = 100,
     include_ids: bool = True,
     pedigree_labels: tuple[str, str, str] = PedigreeLabels,
-):
+) -> pl.DataFrame | pl.LazyFrame:
     """General utility for iterating through pedigree to find relatives"""
     animal = pedigree_labels[0]
-    ids = pl.DataFrame({animal: ids}, schema=pedigree.select(animal).schema)
+    ids = pl.DataFrame({animal: ids}, schema=pedigree.select(animal).collect_schema())
     ids_relatives = pl.DataFrame(schema=ids.schema)
     g = 0
     ids_g = ids
+    relatives = []
     while generations > g and ids_g.height != 0:
         ids_g = (
-            relatives_function(pedigree.lazy(), ids_g, pedigree_labels)
+            relatives_function(pedigree, ids_g, pedigree_labels)
             .select(animal)
             .collect()
         )
-        ids_relatives = pl.concat([ids_relatives, ids_g])
+        relatives.append(ids_g)
         g += 1
 
     if include_ids:
-        ids_relatives = pl.concat([ids_relatives, ids])
+        relatives.append(ids)
+    ids_relatives = pl.concat(relatives)
     return pedigree.filter(pl.col(animal).is_in(ids_relatives))
 
 

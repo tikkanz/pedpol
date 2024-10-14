@@ -29,19 +29,19 @@ def test_generation_classification_of_invalid_pedigree(ped_circular_classified):
 def test_get_progeny_of_single_id(ped_jv):
     ped, lbls = ped_jv
     ids = [3]
-    assert get_progeny_of(ped, ids).height == 3
+    assert get_progeny_of(ped, ids).collect().height == 3
 
 
 def test_get_parents_of_founder(ped_jv):
     ped, lbls = ped_jv
     ids = [3]
-    assert get_parents_of(ped, ids, pedigree_labels=lbls).height == 0
+    assert get_parents_of(ped, ids, pedigree_labels=lbls).collect().height == 0
 
 
 def test_get_parents_of_multiple_ids(ped_jv):
     ped, lbls = ped_jv
     ids = [11, 15]
-    assert get_parents_of(ped, ids, pedigree_labels=lbls).height == 2
+    assert get_parents_of(ped, ids, pedigree_labels=lbls).collect().height == 2
 
 
 def test_get_ancestors_of_single_id(ped_jv):
@@ -63,7 +63,7 @@ def test_get_1gen_ancestors_same_as_get_parents(ped_lit):
         get_ancestors_of(
             ped, ids, pedigree_labels=lbls, generations=1, include_ids=False
         ).height
-        == get_parents_of(ped, ids, pedigree_labels=lbls).height
+        == get_parents_of(ped, ids, pedigree_labels=lbls).collect().height
     )
 
 
