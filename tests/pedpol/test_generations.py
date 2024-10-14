@@ -1,4 +1,4 @@
-from pedigree.generations import (
+from pedpol.generations import (
     classify_generations,
     get_ancestors_of,
     get_descendants_of,

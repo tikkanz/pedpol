@@ -1,8 +1,9 @@
 from pathlib import Path
 
 import polars as pl
-from pedigree.core import null_unknown_parents
-from pedigree.generations import (
+
+from pedpol.core import null_unknown_parents
+from pedpol.generations import (
     classify_generations,
     get_ancestors_of,
     get_descendants_of,

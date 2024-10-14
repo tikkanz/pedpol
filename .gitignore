@@ -13,3 +13,4 @@ scratch_*
 .pytest_cache/
 .ruff_cache/
 .venv
+.vscode

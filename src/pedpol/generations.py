@@ -2,7 +2,7 @@ from typing import Collection
 
 import polars as pl
 
-from pedigree.core import PedigreeLabels, parents
+from pedpol.core import PedigreeLabels, parents
 
 
 def get_progeny_of(

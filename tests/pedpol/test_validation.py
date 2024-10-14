@@ -1,8 +1,8 @@
 import polars as pl
 import pytest
 
-from pedigree.core import parents
-from pedigree.validation import (
+from pedpol.core import parents
+from pedpol.validation import (
     add_missing_records,
     get_animals_are_own_parent,
     get_animals_born_before_parents,

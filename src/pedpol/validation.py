@@ -1,7 +1,7 @@
 import polars as pl
 
-from pedigree.core import PedigreeLabels, SexIds, SexLabel, parents
-from pedigree.generations import classify_generations
+from pedpol.core import PedigreeLabels, SexIds, SexLabel, parents
+from pedpol.generations import classify_generations
 
 
 def get_parents_both_sires_and_dams(

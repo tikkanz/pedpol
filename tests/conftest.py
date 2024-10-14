@@ -3,10 +3,11 @@ from pathlib import Path
 
 import polars as pl
 import pytest
-from pedigree.core import null_unknown_parents
-from pedigree.generations import classify_generations
 
-data_dir = Path("/home/rishe0/dev/pedigree/tests/resources")
+from pedpol.core import null_unknown_parents
+from pedpol.generations import classify_generations
+
+data_dir = Path("/home/rishe0/dev/pedpol/tests/resources")
 
 
 @pytest.fixture
