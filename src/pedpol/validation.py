@@ -164,7 +164,17 @@ def validate_pedigree(
     sex_label: str | None = None,
     sex_codes: tuple[any, any] | None = None,
 ) -> tuple[bool, pl.DataFrame]:
-    """Validates a pedigree"""
+    """Validates a pedigree
+
+    Checks for:
+     * parents without their own individual record
+     * animals with multiple individual records
+     * animals that occur as both sires & dams
+     * animals that are their own parent
+     * animals born before their parents (if `age_label` is None then
+       generations will be classified)
+     * animals with mis-matched sex and parent type (requires `sex_label`)
+    """
     # Raise error if pedigree doesn't have 3 columns (animal, sire, dam)
     if missing_lbls := [
         lbl
@@ -211,7 +221,7 @@ def validate_pedigree(
                 pedigree_labels=pedigree_labels,
                 sex_label=sex_label,
                 sex_codes=sex_codes,
-            ).with_columns(pl.lit("wrong sex for parent role").alias("error"))
+            ).with_columns(pl.lit("wrong sex for parental role").alias("error"))
         )
 
     errors = pl.concat(pl.collect_all(errors))
