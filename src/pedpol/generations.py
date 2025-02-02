@@ -11,6 +11,7 @@ def get_progeny_of(
     pedigree_labels: tuple[str, str, str] = PedigreeLabels,
 ) -> pl.LazyFrame:
     """Return records for the progeny of the animals specified"""
+    ids = pl.Series(values=ids, dtype=pedigree.collect_schema()[pedigree_labels[0]])
     return pedigree.lazy().filter(
         pl.any_horizontal(pl.col(pedigree_labels[1:]).is_in(ids))
     )
@@ -23,7 +24,11 @@ def get_parents_of(
 ) -> pl.LazyFrame:
     """Return records for the parents of the animals specified"""
     animal, sire, dam = pedigree_labels
-    anims = pedigree.lazy().filter(pl.col(animal).is_in(ids))
+    if isinstance(ids, list):
+        ids = pl.LazyFrame(
+            {animal: ids}, schema=pedigree.select(animal).collect_schema()
+        )
+    anims = pedigree.lazy().join(ids.lazy(), on=animal)
     prnts = anims.select(parents((sire, dam)))
     return pedigree.lazy().join(prnts, left_on=animal, right_on="parent")
 
@@ -39,7 +44,6 @@ def _get_relatives_of(
     """General utility for iterating through pedigree to find relatives"""
     animal = pedigree_labels[0]
     ids = pl.DataFrame({animal: ids}, schema=pedigree.select(animal).collect_schema())
-    ids_relatives = pl.DataFrame(schema=ids.schema)
     g = 0
     ids_g = ids
     relatives = []
@@ -55,7 +59,9 @@ def _get_relatives_of(
     if include_ids:
         relatives.append(ids)
     ids_relatives = pl.concat(relatives)
-    return pedigree.filter(pl.col(animal).is_in(ids_relatives))
+    if isinstance(pedigree, pl.LazyFrame):
+        ids_relatives = ids_relatives.lazy()
+    return pedigree.join(ids_relatives, on=animal)
 
 
 def get_descendants_of(
@@ -113,7 +119,11 @@ def classify_generations(
     while parents_df.height < parent_count:
         parent_count = parents_df.height
         pedigree = pedigree.with_columns(
-            pl.when(pl.col(animal).is_in(parents_df.select(parents((sire, dam)))))
+            pl.when(
+                pl.col(animal).is_in(
+                    parents_df.select(parents((sire, dam))).to_series()
+                )
+            )
             .then(pl.col("generation") + 1)
             .otherwise("generation")
         )

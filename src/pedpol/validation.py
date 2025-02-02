@@ -246,9 +246,11 @@ def null_parents_without_own_record(
 ) -> pl.LazyFrame | pl.DataFrame:
     """Returns pedigree where parents without their own record are marked as `null`"""
     parent_cols = pedigree_labels[1:]
-    null_parents = get_parents_without_own_record(
-        pedigree.lazy(), pedigree_labels=pedigree_labels
-    ).collect()
+    null_parents = (
+        get_parents_without_own_record(pedigree.lazy(), pedigree_labels=pedigree_labels)
+        .collect()
+        .to_series()
+    )
     return pedigree.with_columns(
         *[
             pl.when(pl.col(col).is_in(null_parents))
