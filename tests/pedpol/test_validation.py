@@ -7,8 +7,7 @@ from pedpol.validation import (
     get_animals_are_own_parent,
     get_animals_born_before_parents,
     get_animals_with_multiple_records,
-    get_female_sires,
-    get_male_dams,
+    get_parent_sex_mismatches,
     get_parents_both_sires_and_dams,
     get_parents_without_own_record,
     null_parents_without_own_record,
@@ -42,9 +41,14 @@ def ped_errors_sex(ped_errors):
     return ped.with_columns((pl.col(lbls[0]) % 2 + 1).alias("sex")), lbls
 
 
-def test_find_parent_sex_errors(ped_errors_sex):
-    assert get_female_sires(*ped_errors_sex).height == 2
-    assert get_male_dams(*ped_errors_sex).height == 1
+def test_find_parent_sex_mismatches(ped_errors_sex):
+    ped, lbls = ped_errors_sex
+    assert get_parent_sex_mismatches(ped, lbls[:2]).height == 2  # just non-male sires
+    assert (
+        get_parent_sex_mismatches(ped, [lbls[i] for i in [0, 2]], sex_codes=(2,)).height
+        == 1
+    )  # just non-female dams
+    assert get_parent_sex_mismatches(*ped_errors_sex).height == 3  # all mismatches
 
 
 def test_no_anims_born_before_parents(ped_jv_classified):

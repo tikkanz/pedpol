@@ -1,3 +1,4 @@
+# %%
 import polars as pl
 
 from pedpol.core import PedigreeLabels, SexIds, SexLabel, parents
@@ -133,34 +134,27 @@ def get_animals_are_dams_before_birth(
     ).filter(pl.col(age_label) >= pl.col(f"{age_label}_as_parent"))
 
 
-def get_female_sires(
+def get_parent_sex_mismatches(
     pedigree: pl.LazyFrame | pl.DataFrame,
     pedigree_labels: tuple[str, str, str] = PedigreeLabels,
     sex_label: str = SexLabel,
     sex_codes: tuple[any, any] = SexIds,
 ) -> pl.LazyFrame | pl.DataFrame:
-    animal, sire, dam = pedigree_labels
-    male, female = sex_codes
-    return (
-        pedigree.filter(pl.col(sex_label) == female)
-        .join(pedigree.select(sire), left_on=animal, right_on=sire)
-        .unique()
-    )
+    """Returns records where parent's sex doesn't match parent type (e.g. female sires)
 
+    Relies on order of sex_codes matching order of parents in pedigree_labels,
+    i.e. both sire label & male id come first."""
+    animal = pedigree_labels[0]
 
-def get_male_dams(
-    pedigree: pl.LazyFrame | pl.DataFrame,
-    pedigree_labels: tuple[str, str, str] = PedigreeLabels,
-    sex_label: str = SexLabel,
-    sex_codes: tuple[any, any] = SexIds,
-) -> pl.LazyFrame | pl.DataFrame:
-    animal, sire, dam = pedigree_labels
-    male, female = sex_codes
-    return (
-        pedigree.filter(pl.col(sex_label) == male)
-        .join(pedigree.select(dam), left_on=animal, right_on=dam)
-        .unique()
-    )
+    mismatches = []
+    for parent_type, sex in zip(pedigree_labels[1:], sex_codes[:2]):
+        mismatch = (
+            pedigree.filter(pl.col(sex_label) != sex)
+            .join(pedigree.select(parent_type), left_on=animal, right_on=parent_type)
+            .unique()
+        )
+        mismatches.append(mismatch)
+    return pl.concat(mismatches)
 
 
 def validate_pedigree(
@@ -212,20 +206,12 @@ def validate_pedigree(
     )
     if sex_label:
         errors.append(
-            get_female_sires(
+            get_parent_sex_mismatches(
                 pedigree,
                 pedigree_labels=pedigree_labels,
                 sex_label=sex_label,
                 sex_codes=sex_codes,
-            ).with_columns(pl.lit("is a female sire").alias("error"))
-        )
-        errors.append(
-            get_male_dams(
-                pedigree,
-                pedigree_labels=pedigree_labels,
-                sex_label=sex_label,
-                sex_codes=sex_codes,
-            ).with_columns(pl.lit("is a male dam").alias("error"))
+            ).with_columns(pl.lit("wrong sex for parent role").alias("error"))
         )
 
     errors = pl.concat(pl.collect_all(errors))
