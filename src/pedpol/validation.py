@@ -1,4 +1,3 @@
-# %%
 import polars as pl
 
 from pedpol.core import PedigreeLabels, SexIds, SexLabel, parents
@@ -91,47 +90,29 @@ def get_animals_born_before_parents(
     )
 
 
-def get_animals_are_sires_before_birth(
+def get_animals_are_parents_before_birth(
     pedigree: pl.LazyFrame | pl.DataFrame,
     pedigree_labels: tuple[str, str, str] = PedigreeLabels,
     age_label: str = "generation",
 ) -> pl.LazyFrame | pl.DataFrame:
-    """Returns any animals that are used as a sire before they were born
+    """Returns any animals that are used as a parent before they were born
 
     `age_label` is column in `pedigree` to use for age comparisons. For example
     'birth_year' or 'generation'"""
-    animal, sire, dam = pedigree_labels
+    animal = pedigree_labels[0]
 
-    return (
-        pedigree.lazy()
-        .join(
-            pedigree.lazy().group_by(sire).agg(pl.col(age_label).min()),
+    mated_before_birth = []
+    for parent_type in pedigree_labels[1:]:
+        not_born_yet = pedigree.join(
+            pedigree.group_by(parent_type).agg(pl.col(age_label).min()),
             left_on=animal,
-            right_on=sire,
+            right_on=parent_type,
             suffix="_as_parent",
-        )
-        .filter(pl.col(age_label) >= pl.col(f"{age_label}_as_parent"))
-        .collect()
-    )
+        ).filter(pl.col(age_label) >= pl.col(f"{age_label}_as_parent"))
 
+        mated_before_birth.append(not_born_yet)
 
-def get_animals_are_dams_before_birth(
-    pedigree: pl.LazyFrame | pl.DataFrame,
-    pedigree_labels: tuple[str, str, str] = PedigreeLabels,
-    age_label: str = "generation",
-) -> pl.LazyFrame | pl.DataFrame:
-    """Returns any animals that are used as a dam before they were born
-
-    `age_label` is column in `pedigree` to use for age comparisons. For example
-    'birth_year' or 'generation'"""
-    animal, sire, dam = pedigree_labels
-
-    return pedigree.join(
-        pedigree.group_by(dam).agg(pl.col(age_label).min()),
-        left_on=animal,
-        right_on=dam,
-        suffix="_as_parent",
-    ).filter(pl.col(age_label) >= pl.col(f"{age_label}_as_parent"))
+    return pl.concat(mated_before_birth)
 
 
 def get_parent_sex_mismatches(
