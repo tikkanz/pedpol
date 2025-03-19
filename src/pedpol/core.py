@@ -1,4 +1,28 @@
+# %%
+from dataclasses import dataclass, field
+
 import polars as pl
+
+
+@dataclass
+class PedigreeDefinition:
+    animal: str = field(default="animal")  # label for column containing animal Id
+    sire: str = field(default="sire")  # label for column containing sire Id
+    dam: str = field(default="dam")  # label for column containing dam Id
+    id_dtype: pl.Int32 | pl.String = field(
+        default=pl.Int32
+    )  # dtype used for Ids, typically string or Int32
+    sex: str | None = field(default=None)  # label for column containing sex Id
+    sex_ids: tuple[any, any] | None = field(default=(1, 2))  # male (1st) & female (2nd)
+    age: str | None = field(
+        default=None
+    )  # label for column containing age (e.g. generation or birth_date)
+    unknown_parent_value: any = field(
+        default=None
+    )  # how the Id of an unkown parent is represented
+
+
+ped_defn = PedigreeDefinition()
 
 PedigreeLabels = ("animal", "sire", "dam")
 """Default labels for individual (1st) male parent (2nd) & female parent (3rd)"""
