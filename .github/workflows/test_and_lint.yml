@@ -35,5 +35,6 @@ jobs:
         run: uv run pytest
       
       - name: Check Linting & Formatting
+        run: |
           uv run ruff check --diff
           uv run ruff format --diff
