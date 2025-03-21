@@ -405,6 +405,8 @@ dependencies = [
 dev = [
     { name = "ipykernel" },
     { name = "numpy" },
+]
+test = [
     { name = "pytest" },
     { name = "ruff" },
 ]
@@ -416,6 +418,8 @@ requires-dist = [{ name = "polars", specifier = ">=0.20.31" }]
 dev = [
     { name = "ipykernel", specifier = ">=6.29.5" },
     { name = "numpy", specifier = ">=2.2.4" },
+]
+test = [
     { name = "pytest", specifier = ">=8.3.5" },
     { name = "ruff", specifier = ">=0.10.0" },
 ]
