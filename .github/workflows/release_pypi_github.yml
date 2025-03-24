@@ -1,4 +1,4 @@
-name: release
+name: "Release to PyPI and GitHub"
 
 on:
   push:
