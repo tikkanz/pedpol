@@ -1,4 +1,5 @@
 # PedPol
+[![Styling, Lint & Test](https://github.com/tikkanz/pedpol/actions/workflows/test_and_lint.yml/badge.svg?event=push)](https://github.com/tikkanz/pedpol/actions/workflows/test_and_lint.yml)
 
 PedPol is a python package for wrangling animal pedigrees
  * Handles large pedigrees (tested for pedigrees with more than 30 million records)
