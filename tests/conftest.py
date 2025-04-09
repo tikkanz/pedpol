@@ -6,6 +6,7 @@ import pytest
 
 from pedpol.core import null_unknown_parents
 from pedpol.generations import classify_generations
+from pedpol.validation import add_missing_records
 
 data_dir = Path(__file__).absolute().parent / "resources"
 
@@ -60,8 +61,25 @@ def ped_errors():
 @pytest.fixture
 def ped_lit():
     ped = pl.read_csv(
-        data_dir / "ped_literal.csv", schema_overrides=3 * [pl.Utf8], comment_prefix="#"
+        data_dir / "ped_literal.csv",
+        schema_overrides=3 * [pl.Utf8],
+        comment_prefix="#",
     ).pipe(null_unknown_parents, parent_labels=("Father", "Mother"))
+    return ped, (ped.columns)
+
+
+@pytest.fixture
+def ped_lit_valid():
+    ped = (
+        pl.read_csv(
+            data_dir / "ped_literal.csv",
+            schema_overrides=3 * [pl.Utf8],
+            comment_prefix="#",
+        )
+        .pipe(null_unknown_parents, parent_labels=("Father", "Mother"))
+        .pipe(add_missing_records, pedigree_labels=("Child", "Father", "Mother"))
+    )
+
     return ped, (ped.columns)
 
 

@@ -58,7 +58,7 @@ def _get_relatives_of(
 
     if include_ids:
         relatives.append(ids)
-    ids_relatives = pl.concat(relatives)
+    ids_relatives = pl.concat(relatives).unique()
     if isinstance(pedigree, pl.LazyFrame):
         ids_relatives = ids_relatives.lazy()
     return pedigree.join(ids_relatives, on=animal)
