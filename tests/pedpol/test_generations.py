@@ -62,14 +62,14 @@ def test_lazy_get_ancestors_of_single_id(ped_jv):
     assert get_ancestors_of(ped.lazy(), ids, pedigree_labels=lbls).collect().height == 9
 
 
-def test_get_ancestors_of_multiple_literal_ids(ped_lit):
-    ped, lbls = ped_lit
+def test_get_ancestors_of_multiple_literal_ids(ped_lit_valid):
+    ped, lbls = ped_lit_valid
     ids = ["Barry", "Emily"]
-    assert get_ancestors_of(ped, ids, pedigree_labels=lbls).height == 6
+    assert get_ancestors_of(ped, ids, pedigree_labels=lbls).height == 13
 
 
-def test_get_1gen_ancestors_same_as_get_parents(ped_lit):
-    ped, lbls = ped_lit
+def test_get_1gen_ancestors_same_as_get_parents(ped_lit_valid):
+    ped, lbls = ped_lit_valid
     ids = ["Barry", "Emily"]
     assert (
         get_ancestors_of(
@@ -84,8 +84,8 @@ def test_get_descendents_of_single_id(ped_jv):
     assert get_descendants_of(ped, [3], pedigree_labels=lbls).height == 11
 
 
-def test_get_descendents_of_single_literal_id(ped_lit):
-    ped, lbls = ped_lit
+def test_get_descendents_of_single_literal_id(ped_lit_valid):
+    ped, lbls = ped_lit_valid
     assert get_descendants_of(ped, ["Harry"], pedigree_labels=lbls).height == 8
 
 
