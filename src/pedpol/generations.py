@@ -13,7 +13,7 @@ def get_progeny_of(
     """Return records for the progeny of the animals specified"""
     ids = pl.Series(values=ids, dtype=pedigree.collect_schema()[pedigree_labels[0]])
     return pedigree.lazy().filter(
-        pl.any_horizontal(pl.col(pedigree_labels[1:]).is_in(ids))
+        pl.any_horizontal(pl.col(pedigree_labels[1:]).is_in(ids.implode()))
     )
 
 
@@ -121,7 +121,7 @@ def classify_generations(
         pedigree = pedigree.with_columns(
             pl.when(
                 pl.col(animal).is_in(
-                    parents_df.select(parents((sire, dam))).to_series()
+                    parents_df.select(parents((sire, dam))).to_series().implode()
                 )
             )
             .then(pl.col("generation") + 1)

@@ -253,7 +253,7 @@ def null_parents_without_own_record(
     )
     return pedigree.with_columns(
         *[
-            pl.when(pl.col(col).is_in(null_parents))
+            pl.when(pl.col(col).is_in(null_parents.implode()))
             .then(pl.lit(None))
             .otherwise(pl.col(col))
             .alias(col)
